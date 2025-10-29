@@ -9,7 +9,6 @@
     const btn = document.createElement('button');
     btn.id = 'chatgpt-jump-btn';
 
-    // Create the response count display
     const responseCountDisplay = document.createElement('p');
     responseCountDisplay.id = 'chatgpt-response-count';
     responseCountDisplay.style.position = 'fixed';
@@ -19,20 +18,21 @@
     responseCountDisplay.style.color = 'white';
     responseCountDisplay.style.padding = '5px 10px';
     responseCountDisplay.style.borderRadius = '5px';
+    responseCountDisplay.style.marginBottom = '5px';
     btn.textContent = '⬆ Prev Response';
     btn.style.position = 'fixed';
     btn.style.bottom = '20px';
     btn.style.right = '20px';
-    btn.style.backgroundColor = 'hsl(222.2 47.4% 11.2%)'; // shadcn primary background (dark)
-    btn.style.color = 'hsl(210 40% 98%)'; // shadcn primary foreground (light)
-    btn.style.padding = '10px 15px'; // px-4 py-2
-    btn.style.borderRadius = '0.375rem'; // rounded-md
-    btn.style.fontSize = '0.875rem'; // text-sm
-    btn.style.fontWeight = '500'; // font-medium
-    btn.style.lineHeight = '1.25rem'; // leading-5
+    btn.style.backgroundColor = 'hsl(222.2 47.4% 11.2%)';
+    btn.style.color = 'hsl(210 40% 98%)';
+    btn.style.padding = '10px 15px';
+    btn.style.borderRadius = '0.375rem';
+    btn.style.fontSize = '0.875rem';
+    btn.style.fontWeight = '500';
+    btn.style.lineHeight = '1.25rem';
     btn.style.border = 'none';
     btn.style.cursor = 'pointer';
-    btn.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)'; // Subtle shadow
+    btn.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
     document.body.appendChild(responseCountDisplay);
     document.body.appendChild(btn);
 
@@ -40,18 +40,16 @@
   }
 
   function getMessages() {
-    // This targets each ChatGPT assistant message block
     return Array.from(document.querySelectorAll('div[data-message-author-role="assistant"]'));
   }
 
   let currentIndex = 0;
-  let responseCountElement = null; // To store the reference to the response count display
+  let responseCountElement = null;
 
   function jumpToPrev() {
     const messages = getMessages();
     if (messages.length === 0) return;
 
-    // When first clicked, set to the last message
     if (currentIndex === 0) {
       currentIndex = messages.length;
     }
