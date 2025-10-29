@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const enable = document.getElementById('enableExtension');
-  const theme = document.getElementById('themeSelect');
+  const enable = document.getElementById('enable-extension');
+  const theme = document.getElementById('theme-select');
 
   // Load saved state
   chrome.storage.sync.get(
