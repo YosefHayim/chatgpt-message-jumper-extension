@@ -46,43 +46,29 @@
       anchor = document.createElement('div');
       anchor.id = 'chatgpt-jumper-anchor';
       Object.assign(anchor.style, {
-        position: 'absolute',
-        top: '50%',
-        zIndex:'10',
- right: '100%', // Position to the left of the composer
+        position: 'fixed',
+ bottom: '0px',
+        right: '0px',
+        padding: '2em',
+        zIndex: '1000', // Ensure it's above most elements
         transform: 'translateY(-50%)',
         display: extensionEnabled ? 'block' : 'none',
         zIndex: '1',           // above composer contents, below global overlays
         pointerEvents: 'none'  // let clicks pass except on the button
       });
 
-      const btn = document.createElement('button');
-      btn.id = 'chatgpt-jump';
-      btn.className = 'chatgpt-jumper-btn';
-      btn.setAttribute('aria-label', 'Jump between responses');
-      btn.style.pointerEvents = 'auto';
-      btn.addEventListener('click', () => jump(btn));
+      // Use the provided button HTML for the jump button
+      const btnHtml = `<button type="button" class="composer-btn" data-testid="composer-plus-btn" aria-label="Add files and more" id="chatgpt-jump" aria-haspopup="menu" aria-expanded="false" data-state="closed"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M9.33496 16.5V10.665H3.5C3.13273 10.665 2.83496 10.3673 2.83496 10C2.83496 9.63273 3.13273 9.33496 3.5 9.33496H9.33496V3.5C9.33496 3.13273 9.63273 2.83496 10 2.83496C10.3673 2.83496 10.665 3.13273 10.665 3.5V9.33496H16.5L16.6338 9.34863C16.9369 9.41057 17.165 9.67857 17.165 10C17.165 10.3214 16.9369 10.5894 16.6338 10.6514L16.5 10.665H10.665V16.5C10.665 16.8673 10.3673 17.165 10 17.165C9.63273 17.165 9.33496 16.8673 9.33496 16.5Z"></path></svg></button>`;
+      anchor.insertAdjacentHTML('beforeend', btnHtml);
 
-      anchor.appendChild(btn);
-      composer.appendChild(anchor);
-
-      // Loader positioned relative to composer
-      let loader = document.getElementById('chatgpt-jumper-loader');
-      if (!loader) {
-        loader = document.createElement('div');
-        loader.id = 'chatgpt-jumper-loader';
-        loader.className = 'loader';
-        Object.assign(loader.style, {
-          position: 'absolute',
-          top: '50%',
-          right: '100%', // Position to the left of the composer
-          transform: 'translateY(-50%)',
-          display: 'none',
-          zIndex: '1',
-          pointerEvents: 'none'
-        });
-        composer.appendChild(loader);
+      const btn = anchor.querySelector('#chatgpt-jump');
+      if (btn) {
+        btn.style.pointerEvents = 'auto';
+        btn.setAttribute('aria-label', 'Jump between responses'); // Update aria-label
+        btn.addEventListener('click', () => jump(btn));
       }
+
+      document.body.appendChild(anchor); // Append to body for fixed positioning
     }
 
     // Initialize index near current viewport center and set direction
@@ -97,10 +83,10 @@
       if (!document.getElementById('chatgpt-jumper-anchor')) {
         init();
       } else {
-        // Ensure anchor remains under current composer
-        const composer = findComposerContainer();
-        if (composer && !composer.contains(document.getElementById('chatgpt-jumper-anchor'))) {
-          document.getElementById('chatgpt-jumper-anchor')?.remove();
+        // If the anchor is not in the body (e.g., if the body was replaced), re-initialize
+        if (!document.body.contains(document.getElementById('chatgpt-jumper-anchor'))) {
+          // Remove existing elements if they somehow got detached or duplicated
+          document.getElementById('chatgpt-jumper-anchor')?.remove(); 
           document.getElementById('chatgpt-jumper-loader')?.remove();
           init();
         }
