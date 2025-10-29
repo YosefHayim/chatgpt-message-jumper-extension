@@ -1,18 +1,25 @@
 (function () {
-  // Wait for page to load fully
   const waitForBody = setInterval(() => {
     if (document.body) {
       clearInterval(waitForBody);
       init();
     }
   }, 500);
-
   function init() {
-    // Create the floating button
     const btn = document.createElement('button');
     btn.id = 'chatgpt-jump-btn';
+
+    // Create the response count display
+    const responseCountDisplay = document.createElement('p');
+    responseCountDisplay.id = 'chatgpt-response-count';
+    responseCountDisplay.style.position = 'fixed';
+    responseCountDisplay.style.bottom = '60px';
+    responseCountDisplay.style.right = '20px';
+    responseCountDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    responseCountDisplay.style.color = 'white';
+    responseCountDisplay.style.padding = '5px 10px';
+    responseCountDisplay.style.borderRadius = '5px';
     btn.textContent = '⬆ Prev Response';
-    // Apply custom CSS for a Shadcn-like style (using Tailwind-like classes for description)
     btn.style.position = 'fixed';
     btn.style.bottom = '20px';
     btn.style.right = '20px';
@@ -26,6 +33,7 @@
     btn.style.border = 'none';
     btn.style.cursor = 'pointer';
     btn.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)'; // Subtle shadow
+    document.body.appendChild(responseCountDisplay);
     document.body.appendChild(btn);
 
     btn.addEventListener('click', jumpToPrev);
@@ -37,6 +45,7 @@
   }
 
   let currentIndex = 0;
+  let responseCountElement = null; // To store the reference to the response count display
 
   function jumpToPrev() {
     const messages = getMessages();
@@ -44,15 +53,20 @@
 
     // When first clicked, set to the last message
     if (currentIndex === 0) {
- currentIndex = messages.length;
+      currentIndex = messages.length;
     }
 
     currentIndex = (currentIndex - 1 + messages.length) % messages.length;
 
     const target = messages[currentIndex];
     if (target) {
+      if (!responseCountElement) {
+        responseCountElement = document.getElementById('chatgpt-response-count');
+      }
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Update button text to show current/total
+      if (responseCountElement) {
+        responseCountElement.textContent = `Response ${currentIndex + 1} of ${messages.length}`;
+      }
       btn.textContent = `⬆ Prev Response (${currentIndex + 1}/${messages.length})`;
       target.style.outline = '2px solid #10a37f';
       setTimeout(() => (target.style.outline = ''), 1200);
