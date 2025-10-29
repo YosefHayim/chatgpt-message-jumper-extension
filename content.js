@@ -47,12 +47,10 @@
       anchor.id = 'chatgpt-jumper-anchor';
       Object.assign(anchor.style, {
         position: 'absolute',
-        bottom: '0',
-        left: '0',
-        right: '0',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        top: '50%',
+        zIndex:'10',
+ right: '100%', // Position to the left of the composer
+        transform: 'translateY(-50%)',
         display: extensionEnabled ? 'block' : 'none',
         zIndex: '1',           // above composer contents, below global overlays
         pointerEvents: 'none'  // let clicks pass except on the button
@@ -64,8 +62,9 @@
       btn.setAttribute('aria-label', 'Jump between responses');
       btn.style.pointerEvents = 'auto';
       btn.addEventListener('click', () => jump(btn));
+
       anchor.appendChild(btn);
-      document.querySelector('#thread-bottom > div').appendChild(anchor);
+      composer.appendChild(anchor);
 
       // Loader positioned relative to composer
       let loader = document.getElementById('chatgpt-jumper-loader');
