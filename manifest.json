@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChatGPT Message Jumper",
-  "version": "1.1.0.4-beta",
+  "version": "1.4",
   "description": "Jump to previous ChatGPT responses on chat.openai.com.",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["https://chatgpt.com/*"],
