@@ -9,7 +9,7 @@
     "dev": "npm run build -- --watch",
     "build": "npm run clean && npm run bundle && npm run copy-assets",
     "bundle": "esbuild src/content.ts --bundle --outfile=dist/content.js --format=iife --target=chrome90 && esbuild src/popup.ts --bundle --outfile=dist/popup.js --format=iife --target=chrome90",
-    "copy-assets": "cpy icons dist --parents && cpy assets/manifest.json assets/popup.html assets/popup.css assets/styles.css dist",
+    "copy-assets": "cpy icons dist --parents && cpy \"assets/*.{json,html,css}\" dist --flat",
     "build:chrome": "npm run build && ./scripts/build-chrome.sh",
     "build:firefox": "npm run build && ./scripts/build-firefox.sh",
     "build:all": "npm run build:chrome && npm run build:firefox",
