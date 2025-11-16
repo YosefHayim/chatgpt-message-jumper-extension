@@ -61,8 +61,8 @@ jobs:
           echo "  Functions: ${FUNCTIONS}%"
           echo "  Lines: ${LINES}%"
 
-          # Check if all coverage metrics meet 90% threshold
-          THRESHOLD=90
+          # Check if all coverage metrics meet 95% threshold
+          THRESHOLD=95
 
           if (( $(echo "$STATEMENTS < $THRESHOLD" | bc -l) )); then
             echo "❌ ERROR: Statement coverage ($STATEMENTS%) is below $THRESHOLD%"
