@@ -3,7 +3,6 @@
  * Manages message bookmarks with custom tags and notes
  */
 
-import { Message } from '~/src/types';
 import storageService from './storageService';
 
 export interface Bookmark {
@@ -116,6 +115,9 @@ export class BookmarkService {
    * Search bookmarks by tag
    */
   public searchByTag(searchTerm: string): Bookmark[] {
+    if (!searchTerm.trim()) {
+      return [];
+    }
     const term = searchTerm.toLowerCase();
     return this.getAllBookmarks().filter(
       (bookmark) =>

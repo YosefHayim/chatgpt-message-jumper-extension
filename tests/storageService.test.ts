@@ -24,7 +24,7 @@ describe('StorageService', () => {
           get: jest.fn((_keys) => {
             return Promise.resolve(mockStorageData);
           }),
-          set: jest.fn((data) => {
+          set: jest.fn((data: any) => {
             mockStorageData = { ...mockStorageData, ...data };
             return Promise.resolve();
           }),
