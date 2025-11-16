@@ -3,9 +3,6 @@
  * Manages message bookmarks with custom tags and notes
  */
 
-import { Message } from '~/src/types';
-import storageService from './storageService';
-
 export interface Bookmark {
   messageIndex: number;
   tag: string;
@@ -36,7 +33,8 @@ export class BookmarkService {
    */
   private async loadBookmarks(): Promise<void> {
     try {
-      const stored = await storageService.get(this.storageKey);
+      const result = await chrome.storage.local.get(this.storageKey);
+      const stored = result[this.storageKey];
       if (stored && Array.isArray(stored)) {
         this.bookmarks.clear();
         stored.forEach((bookmark: Bookmark) => {
@@ -54,7 +52,7 @@ export class BookmarkService {
   private async saveBookmarks(): Promise<void> {
     try {
       const bookmarksArray = Array.from(this.bookmarks.values());
-      await storageService.set(this.storageKey, bookmarksArray);
+      await chrome.storage.local.set({ [this.storageKey]: bookmarksArray });
     } catch (error) {
       console.error('Failed to save bookmarks:', error);
     }
