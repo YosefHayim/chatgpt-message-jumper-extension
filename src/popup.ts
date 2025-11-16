@@ -4,6 +4,7 @@
  */
 
 import storageService from './services/storageService';
+import logger from './utils/logger';
 import type { ExtensionSettings } from './types';
 
 class PopupUI {
@@ -23,6 +24,13 @@ class PopupUI {
     thresholdSlider: null as HTMLInputElement | null,
     thresholdValue: null as HTMLSpanElement | null,
     thresholdContainer: null as HTMLDivElement | null,
+    loggerEnabled: null as HTMLInputElement | null,
+    logLevelSelect: null as HTMLSelectElement | null,
+    logTotal: null as HTMLSpanElement | null,
+    logErrors: null as HTMLSpanElement | null,
+    logWarnings: null as HTMLSpanElement | null,
+    downloadLogsBtn: null as HTMLButtonElement | null,
+    clearLogsBtn: null as HTMLButtonElement | null,
   };
 
   constructor() {
@@ -41,8 +49,10 @@ class PopupUI {
   private async setup(): Promise<void> {
     this.cacheElements();
     await this.loadSettings();
+    await this.loadLoggerState();
     this.bindEvents();
     this.updateTheme();
+    await this.updateLogStats();
   }
 
   private cacheElements(): void {
@@ -53,6 +63,15 @@ class PopupUI {
     this.elements.thresholdSlider = document.getElementById('threshold-slider') as HTMLInputElement;
     this.elements.thresholdValue = document.getElementById('threshold-value') as HTMLSpanElement;
     this.elements.thresholdContainer = document.getElementById('threshold-container') as HTMLDivElement;
+
+    // Logger elements
+    this.elements.loggerEnabled = document.getElementById('logger-enabled') as HTMLInputElement;
+    this.elements.logLevelSelect = document.getElementById('log-level-select') as HTMLSelectElement;
+    this.elements.logTotal = document.getElementById('log-total') as HTMLSpanElement;
+    this.elements.logErrors = document.getElementById('log-errors') as HTMLSpanElement;
+    this.elements.logWarnings = document.getElementById('log-warnings') as HTMLSpanElement;
+    this.elements.downloadLogsBtn = document.getElementById('download-logs') as HTMLButtonElement;
+    this.elements.clearLogsBtn = document.getElementById('clear-logs') as HTMLButtonElement;
   }
 
   private async loadSettings(): Promise<void> {
@@ -121,6 +140,30 @@ class PopupUI {
     this.elements.thresholdSlider?.addEventListener('change', (e) => {
       this.updateSetting('tokenWarningThreshold', parseInt((e.target as HTMLInputElement).value));
     });
+
+    // Logger events
+    this.elements.loggerEnabled?.addEventListener('change', async (e) => {
+      const enabled = (e.target as HTMLInputElement).checked;
+      await logger.updateConfig({ enabled });
+      await this.updateLogStats();
+    });
+
+    this.elements.logLevelSelect?.addEventListener('change', async (e) => {
+      const level = parseInt((e.target as HTMLSelectElement).value);
+      await logger.updateConfig({ level });
+      await this.updateLogStats();
+    });
+
+    this.elements.downloadLogsBtn?.addEventListener('click', async () => {
+      await logger.downloadLogs();
+    });
+
+    this.elements.clearLogsBtn?.addEventListener('click', async () => {
+      if (confirm('Are you sure you want to clear all logs?')) {
+        await logger.clearLogs();
+        await this.updateLogStats();
+      }
+    });
   }
 
   private async updateSetting<K extends keyof ExtensionSettings>(
@@ -136,6 +179,34 @@ class PopupUI {
       (this.settings.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  }
+
+  private async loadLoggerState(): Promise<void> {
+    const config = logger.getConfig();
+
+    if (this.elements.loggerEnabled) {
+      this.elements.loggerEnabled.checked = config.enabled;
+    }
+
+    if (this.elements.logLevelSelect) {
+      this.elements.logLevelSelect.value = config.level.toString();
+    }
+  }
+
+  private async updateLogStats(): Promise<void> {
+    const stats = await logger.getStats();
+
+    if (this.elements.logTotal) {
+      this.elements.logTotal.textContent = stats.total.toString();
+    }
+
+    if (this.elements.logErrors) {
+      this.elements.logErrors.textContent = stats.byLevel.ERROR.toString();
+    }
+
+    if (this.elements.logWarnings) {
+      this.elements.logWarnings.textContent = stats.byLevel.WARN.toString();
+    }
   }
 }
 
