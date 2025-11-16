@@ -19,13 +19,15 @@ This will install all required packages (~356 packages).
 npm run build
 ```
 
-This creates the `dist/` folder with all compiled files:
+This creates the `dist/` folder with all **bundled** files:
 - ✅ manifest.json
-- ✅ content.js (compiled TypeScript)
-- ✅ popup.js (compiled TypeScript)
+- ✅ content.js (bundled TypeScript - all imports resolved into single file)
+- ✅ popup.js (bundled TypeScript - all imports resolved into single file)
 - ✅ popup.html
 - ✅ styles.css
 - ✅ icons/
+
+**Note:** The build process uses **esbuild** to bundle all TypeScript modules into single JavaScript files that Chrome can execute directly.
 
 ### Step 3: Load in Chrome
 
