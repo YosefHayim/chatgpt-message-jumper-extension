@@ -3,7 +3,6 @@
  * Tracks conversations across platforms with time-based analytics
  */
 
-import storageService from './storageService';
 import platformDetector from './platformDetector';
 
 export interface ConversationRecord {
@@ -68,7 +67,8 @@ export class ConversationTrackerService {
    */
   private async loadConversations(): Promise<void> {
     try {
-      const stored = await storageService.get(this.storageKey);
+      const result = await chrome.storage.local.get(this.storageKey);
+      const stored = result[this.storageKey];
       if (stored && Array.isArray(stored)) {
         this.conversations = stored;
         // Clean up old conversations (older than 6 months)
@@ -84,7 +84,7 @@ export class ConversationTrackerService {
    */
   private async saveConversations(): Promise<void> {
     try {
-      await storageService.set(this.storageKey, this.conversations);
+      await chrome.storage.local.set({ [this.storageKey]: this.conversations });
     } catch (error) {
       console.error('Failed to save conversation history:', error);
     }
