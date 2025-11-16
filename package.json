@@ -16,7 +16,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "clean": "rimraf dist dist-firefox *.zip"
+    "clean": "rimraf dist dist-firefox && rimraf \"*.zip\""
   },
   "dependencies": {},
   "devDependencies": {
