@@ -32,11 +32,11 @@ A professional-grade Chrome extension built with TypeScript and React that provi
 ## 🏗️ Architecture
 
 ### Tech Stack
-- **Framework**: [Plasmo](https://www.plasmo.com/) - Modern Chrome extension framework
 - **Language**: TypeScript (strict mode)
-- **UI**: React 18 with hooks
+- **Bundler**: [esbuild](https://esbuild.github.io/) - Fast TypeScript/JavaScript bundler
 - **Testing**: Jest + Testing Library
-- **Build**: Plasmo build system with HMR
+- **Build**: esbuild with TypeScript compilation
+- **UI**: Vanilla JavaScript with TypeScript
 
 ### Project Structure
 ```
@@ -95,11 +95,11 @@ npm run package
 ```
 
 ### Loading in Chrome
-1. Run `npm run dev`
+1. Run `npm run build`
 2. Open Chrome and navigate to `chrome://extensions`
 3. Enable "Developer mode"
 4. Click "Load unpacked"
-5. Select `build/chrome-mv3-dev` directory
+5. Select the `dist/` directory
 
 ### Testing
 ```bash

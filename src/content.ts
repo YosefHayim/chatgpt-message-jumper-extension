@@ -17,6 +17,7 @@ class AIConversationNavigator {
   private isLoading: boolean = false;
   private enabled: boolean = true;
   private observer: MutationObserver | null = null;
+  private refreshTimeout: number | null = null;
 
   constructor() {
     this.initialize();
@@ -79,6 +80,8 @@ class AIConversationNavigator {
       right: '24px',
       zIndex: '9999',
       fontFamily: 'system-ui, -apple-system, sans-serif',
+      pointerEvents: 'none', // Don't block clicks on the page
+      maxWidth: '300px', // Prevent overflow
     });
 
     // Create stats panel
@@ -113,6 +116,7 @@ class AIConversationNavigator {
       lineHeight: '1.5',
       minWidth: '200px',
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+      pointerEvents: 'auto', // Allow interactions with stats panel
     });
 
     this.statsPanel.innerHTML = `
@@ -144,6 +148,7 @@ class AIConversationNavigator {
       gap: '10px',
       transition: 'all 0.2s ease',
       minWidth: '140px',
+      pointerEvents: 'auto', // Allow button clicks
     });
 
     this.navButton.addEventListener('click', () => this.handleNavigation());
@@ -233,7 +238,14 @@ class AIConversationNavigator {
       );
 
       if (hasRelevantChanges) {
-        this.refreshExtension();
+        // Debounce refresh to avoid performance issues
+        if (this.refreshTimeout) {
+          clearTimeout(this.refreshTimeout);
+        }
+        this.refreshTimeout = window.setTimeout(() => {
+          this.refreshExtension();
+          this.refreshTimeout = null;
+        }, 500); // Wait 500ms after last change before refreshing
       }
     });
 
@@ -249,6 +261,11 @@ class AIConversationNavigator {
   }
 
   private cleanup(): void {
+    if (this.refreshTimeout) {
+      clearTimeout(this.refreshTimeout);
+      this.refreshTimeout = null;
+    }
+
     if (this.container) {
       this.container.remove();
       this.container = null;
