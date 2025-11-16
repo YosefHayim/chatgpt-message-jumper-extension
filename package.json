@@ -22,7 +22,7 @@
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@testing-library/jest-dom": "^6.1.5",
-    "@types/chrome": "^0.0.258",
+    "@types/chrome": "^0.1.29",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.10.6",
     "esbuild": "^0.19.11",
