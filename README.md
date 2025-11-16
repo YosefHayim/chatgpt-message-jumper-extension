@@ -242,10 +242,24 @@ MIT License - see LICENSE file for details
 - Icons and design inspired by modern web standards
 - Community feedback and contributions
 
-## 📧 Contact
+## 📧 Support & Contact
 
-**Author**: YosefHayim
-**Repository**: [GitHub](https://github.com/YosefHayim/chatgpt-message-jumper-extension)
+### Need Help?
+
+If you encounter bugs, have feature requests, or need assistance:
+
+- **📧 Email**: [yosefisabag@gmail.com](mailto:yosefisabag@gmail.com)
+- **💼 LinkedIn**: [Yosef Hayim Sabag](https://www.linkedin.com/in/yosef-hayim-sabag/)
+- **🐛 GitHub Issues**: [Report a bug](https://github.com/YosefHayim/ai-extension-conversation-navigator/issues)
+
+For detailed support information, see [SUPPORT.md](SUPPORT.md).
+
+### Maintainer
+
+**Yosef Hayim Sabag**
+- GitHub: [@YosefHayim](https://github.com/YosefHayim)
+- Email: [yosefisabag@gmail.com](mailto:yosefisabag@gmail.com)
+- LinkedIn: [linkedin.com/in/yosef-hayim-sabag](https://www.linkedin.com/in/yosef-hayim-sabag/)
 
 ## 🗺️ Roadmap
 
