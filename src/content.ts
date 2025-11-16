@@ -10,7 +10,7 @@ import searchService from './services/searchService';
 import bookmarkService from './services/bookmarkService';
 import conversationTrackerService from './services/conversationTrackerService';
 import storageService from './services/storageService';
-import { NavigationDirection } from './types';
+import { NavigationDirection, MessageRole } from './types';
 import { formatTokenCount, formatCharacterCount } from './utils/tokenEstimator';
 
 class AIConversationNavigator {
@@ -29,6 +29,11 @@ class AIConversationNavigator {
   private refreshTimeout: number | null = null;
   private originalTitle: string = document.title;
   private messagesCollapsed: boolean = false;
+  private collapseBtn: HTMLButtonElement | null = null;
+  private bookmarksBtn: HTMLButtonElement | null = null;
+  private codeFilterBtn: HTMLButtonElement | null = null;
+  private isPanelCollapsed: boolean = false;
+  private panelCollapseBtn: HTMLButtonElement | null = null;
 
   constructor() {
     this.initialize();
@@ -115,6 +120,9 @@ class AIConversationNavigator {
       maxWidth: '300px', // Prevent overflow
     });
 
+    // Create panel collapse button
+    this.createPanelCollapseButton();
+
     // Create stats panel
     this.createStatsPanel();
 
@@ -130,6 +138,68 @@ class AIConversationNavigator {
     // Initial UI update
     this.updateUI();
     this.updatePageTitle();
+  }
+
+  private createPanelCollapseButton(): void {
+    this.panelCollapseBtn = document.createElement('button');
+    this.panelCollapseBtn.textContent = '−';
+    this.panelCollapseBtn.title = 'Minimize panel';
+
+    Object.assign(this.panelCollapseBtn.style, {
+      background: 'rgba(0, 0, 0, 0.8)',
+      backdropFilter: 'blur(10px)',
+      color: 'white',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '50%',
+      width: '32px',
+      height: '32px',
+      fontSize: '20px',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+      pointerEvents: 'auto',
+      marginBottom: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0',
+    });
+
+    this.panelCollapseBtn.addEventListener('mouseenter', () => {
+      this.panelCollapseBtn!.style.background = 'rgba(16, 163, 127, 0.2)';
+      this.panelCollapseBtn!.style.borderColor = '#10a37f';
+    });
+
+    this.panelCollapseBtn.addEventListener('mouseleave', () => {
+      this.panelCollapseBtn!.style.background = 'rgba(0, 0, 0, 0.8)';
+      this.panelCollapseBtn!.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+    });
+
+    this.panelCollapseBtn.addEventListener('click', () => {
+      this.togglePanelCollapse();
+    });
+
+    this.container!.appendChild(this.panelCollapseBtn);
+  }
+
+  private togglePanelCollapse(): void {
+    this.isPanelCollapsed = !this.isPanelCollapsed;
+
+    if (this.isPanelCollapsed) {
+      // Hide all panels
+      if (this.statsPanel) this.statsPanel.style.display = 'none';
+      if (this.actionsPanel) this.actionsPanel.style.display = 'none';
+      if (this.navButton) this.navButton.style.display = 'none';
+      this.panelCollapseBtn!.textContent = '+';
+      this.panelCollapseBtn!.title = 'Expand panel';
+    } else {
+      // Show all panels
+      if (this.statsPanel) this.statsPanel.style.display = 'block';
+      if (this.actionsPanel) this.actionsPanel.style.display = 'flex';
+      if (this.navButton) this.navButton.style.display = 'block';
+      this.panelCollapseBtn!.textContent = '−';
+      this.panelCollapseBtn!.title = 'Minimize panel';
+    }
   }
 
   private createStatsPanel(): void {
@@ -226,23 +296,30 @@ class AIConversationNavigator {
       this.exportToMarkdown();
     });
 
+    // Download all images button
+    const downloadImagesBtn = this.createActionButton('🖼️ Images', 'Download all images from conversation', () => {
+      this.downloadAllImages();
+    });
+
     // Collapse/Expand toggle
-    const collapseBtn = this.createActionButton('📏 Collapse', 'Toggle long message collapse', () => {
+    this.collapseBtn = this.createActionButton('📏 Collapse', 'Toggle long message collapse', () => {
       this.toggleMessageCollapse();
-      collapseBtn.textContent = this.messagesCollapsed ? '📏 Expand' : '📏 Collapse';
-      collapseBtn.title = this.messagesCollapsed ? 'Expand long messages' : 'Collapse long messages';
+      this.updateToggleButtonStyle(this.collapseBtn!, this.messagesCollapsed);
+      this.collapseBtn!.textContent = this.messagesCollapsed ? '📏 Expand' : '📏 Collapse';
+      this.collapseBtn!.title = this.messagesCollapsed ? 'Expand long messages' : 'Collapse long messages';
     });
 
     // Bookmarks panel toggle
-    const bookmarksBtn = this.createActionButton('🔖 Bookmarks', 'View bookmarked messages', () => {
+    this.bookmarksBtn = this.createActionButton('🔖 Bookmarks', 'View bookmarked messages', () => {
       this.toggleBookmarksPanel();
+      const isOpen = this.bookmarksPanel && this.bookmarksPanel.style.display !== 'none';
+      this.updateToggleButtonStyle(this.bookmarksBtn!, isOpen);
     });
 
     // Code only filter
-    const codeFilterBtn = this.createActionButton('💻 Code Only', 'Show only code responses', () => {
+    this.codeFilterBtn = this.createActionButton('💻 Code Only', 'Show only code responses', () => {
       this.toggleCodeOnlyFilter();
-      codeFilterBtn.style.background = this.codeOnlyFilter ? 'rgba(16, 163, 127, 0.3)' : 'rgba(0, 0, 0, 0.8)';
-      codeFilterBtn.style.borderColor = this.codeOnlyFilter ? '#10a37f' : 'rgba(255, 255, 255, 0.1)';
+      this.updateToggleButtonStyle(this.codeFilterBtn!, this.codeOnlyFilter);
     });
 
     // Re-ask on different platform
@@ -254,15 +331,28 @@ class AIConversationNavigator {
     this.actionsPanel.appendChild(lastBtn);
     this.actionsPanel.appendChild(copyBtn);
     this.actionsPanel.appendChild(exportBtn);
-    this.actionsPanel.appendChild(collapseBtn);
-    this.actionsPanel.appendChild(bookmarksBtn);
-    this.actionsPanel.appendChild(codeFilterBtn);
+    this.actionsPanel.appendChild(downloadImagesBtn);
+    this.actionsPanel.appendChild(this.collapseBtn);
+    this.actionsPanel.appendChild(this.bookmarksBtn);
+    this.actionsPanel.appendChild(this.codeFilterBtn);
     this.actionsPanel.appendChild(reaskBtn);
 
     this.container!.appendChild(this.actionsPanel);
 
     // Add bookmark buttons to messages
     this.addBookmarkButtons();
+  }
+
+  private updateToggleButtonStyle(button: HTMLButtonElement, isActive: boolean): void {
+    if (isActive) {
+      button.style.background = 'rgba(16, 163, 127, 0.3)';
+      button.style.borderColor = '#10a37f';
+      button.style.borderWidth = '2px';
+    } else {
+      button.style.background = 'rgba(0, 0, 0, 0.8)';
+      button.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+      button.style.borderWidth = '1px';
+    }
   }
 
   private createActionButton(text: string, title: string, onClick: () => void): HTMLButtonElement {
@@ -291,13 +381,29 @@ class AIConversationNavigator {
     });
 
     button.addEventListener('mouseleave', () => {
-      button.style.background = 'rgba(0, 0, 0, 0.8)';
-      button.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+      // Check if this is a toggle button and restore its state
+      const isToggled = this.getButtonToggleState(button);
+      if (isToggled) {
+        button.style.background = 'rgba(16, 163, 127, 0.3)';
+        button.style.borderColor = '#10a37f';
+      } else {
+        button.style.background = 'rgba(0, 0, 0, 0.8)';
+        button.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+      }
     });
 
     button.addEventListener('click', onClick);
 
     return button;
+  }
+
+  private getButtonToggleState(button: HTMLButtonElement): boolean {
+    if (button === this.collapseBtn) return this.messagesCollapsed;
+    if (button === this.codeFilterBtn) return this.codeOnlyFilter;
+    if (button === this.bookmarksBtn) {
+      return this.bookmarksPanel !== null && this.bookmarksPanel.style.display !== 'none';
+    }
+    return false;
   }
 
   private copyAllResponses(): void {
@@ -344,6 +450,59 @@ class AIConversationNavigator {
     URL.revokeObjectURL(url);
 
     this.showNotification('✅ Conversation exported to Markdown!');
+  }
+
+  private async downloadAllImages(): Promise<void> {
+    // Find all images in the conversation
+    const messages = messageService.getAssistantMessages();
+    const images: HTMLImageElement[] = [];
+
+    messages.forEach((msg) => {
+      const imgs = msg.element.querySelectorAll('img');
+      imgs.forEach((img) => images.push(img));
+    });
+
+    if (images.length === 0) {
+      this.showNotification('ℹ️ No images found in conversation');
+      return;
+    }
+
+    this.showNotification(`📥 Downloading ${images.length} image(s)...`);
+
+    // Download each image
+    for (let i = 0; i < images.length; i++) {
+      const img = images[i];
+      const imgSrc = img.src;
+
+      try {
+        // Fetch the image
+        const response = await fetch(imgSrc);
+        const blob = await response.blob();
+
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        // Generate filename from src or use index
+        const filename = `conversation-image-${i + 1}.${blob.type.split('/')[1] || 'png'}`;
+        a.download = filename;
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        // Small delay between downloads to avoid browser blocking
+        if (i < images.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      } catch (error) {
+        console.error('Failed to download image:', error);
+      }
+    }
+
+    this.showNotification(`✅ Downloaded ${images.length} image(s)!`);
   }
 
   private toggleMessageCollapse(): void {
@@ -533,6 +692,9 @@ class AIConversationNavigator {
       const term = (e.target as HTMLInputElement).value;
       const results = searchService.search(term);
       const stats = searchService.getSearchStats();
+
+      // Highlight matching text in the messages
+      searchService.highlightText(term);
 
       if (statsDiv) {
         if (results.length > 0) {
@@ -726,13 +888,14 @@ class AIConversationNavigator {
     const messages = messageService.getAssistantMessages();
     const platform = platformDetector.getPlatformName();
 
-    messages.forEach((msg, index) => {
+    messages.forEach((msg) => {
       // Skip if bookmark button already exists
       if (msg.element.querySelector('.ai-bookmark-btn')) {
         return;
       }
 
-      const isBookmarked = bookmarkService.isBookmarked(index);
+      const msgIndex = msg.index;
+      const isBookmarked = bookmarkService.isBookmarked(msgIndex);
       const bookmarkBtn = document.createElement('button');
       bookmarkBtn.className = 'ai-bookmark-btn';
       bookmarkBtn.innerHTML = isBookmarked ? '🔖' : '🔖';
@@ -755,7 +918,7 @@ class AIConversationNavigator {
 
       bookmarkBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        await this.toggleBookmark(index, msg.element, bookmarkBtn);
+        await this.toggleBookmark(msgIndex, msg.element, bookmarkBtn);
       });
 
       // Make message container relative for positioning
@@ -765,13 +928,13 @@ class AIConversationNavigator {
 
       // Show button on hover
       msg.element.addEventListener('mouseenter', () => {
-        if (!bookmarkService.isBookmarked(index)) {
+        if (!bookmarkService.isBookmarked(msgIndex)) {
           bookmarkBtn.style.opacity = '1';
         }
       });
 
       msg.element.addEventListener('mouseleave', () => {
-        if (!bookmarkService.isBookmarked(index)) {
+        if (!bookmarkService.isBookmarked(msgIndex)) {
           bookmarkBtn.style.opacity = '0';
         }
       });
@@ -1018,7 +1181,7 @@ class AIConversationNavigator {
 
     const currentPlatform = platformDetector.getPlatformName();
     const allMessages = messageService.getAllMessages();
-    const userMessages = allMessages.filter((msg) => msg.role.toString() === 'user');
+    const userMessages = allMessages.filter((msg) => msg.role === MessageRole.USER);
 
     const platformUrls = {
       ChatGPT: 'https://chat.openai.com/',
@@ -1072,6 +1235,20 @@ class AIConversationNavigator {
             transition: all 0.2s ease;
           ">
             📋 Copy All User Messages
+          </button>
+          <button id="open-all-platforms" style="
+            background: rgba(16, 163, 127, 0.2);
+            border: 1px solid #10a37f;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-align: left;
+            transition: all 0.2s ease;
+            font-weight: 600;
+          ">
+            🚀 Open All Platforms & Copy Conversation
           </button>
         </div>
       </div>
@@ -1145,6 +1322,38 @@ class AIConversationNavigator {
       } else {
         this.showNotification('❌ No user messages found');
       }
+    });
+
+    const openAllBtn = this.reaskPanel.querySelector('#open-all-platforms');
+    openAllBtn?.addEventListener('click', () => {
+      if (userMessages.length === 0) {
+        this.showNotification('❌ No user messages found');
+        return;
+      }
+
+      // Copy all user messages to clipboard
+      const content = userMessages
+        .map((msg, index) => `[Message ${index + 1}]\n${msg.content}`)
+        .join('\n\n---\n\n');
+
+      navigator.clipboard.writeText(content).then(() => {
+        this.showNotification(`📋 Copied conversation! Opening all platforms...`);
+
+        // Open all platforms except current one
+        Object.entries(platformUrls).forEach(([platform, url]) => {
+          if (platform !== currentPlatform) {
+            window.open(url, '_blank');
+          }
+        });
+
+        // Show final notification after a delay
+        setTimeout(() => {
+          this.showNotification('✅ All platforms opened! Paste your conversation.');
+        }, 1000);
+      }).catch((err) => {
+        console.error('Failed to copy:', err);
+        this.showNotification('❌ Failed to copy to clipboard');
+      });
     });
 
     // Add hover effects to platform links

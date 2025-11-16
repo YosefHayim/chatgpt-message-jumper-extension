@@ -12,6 +12,7 @@ export class SearchService {
   private searchResults: SearchResult[] = [];
   private currentResultIndex: number = 0;
   private isSearchActive: boolean = false;
+  private highlightedElements: HTMLElement[] = [];
 
   private constructor() {
     this.initializeSearchListener();
@@ -186,6 +187,7 @@ export class SearchService {
     this.searchResults = [];
     this.currentResultIndex = 0;
     this.isSearchActive = false;
+    this.clearHighlights();
   }
 
   /**
@@ -201,6 +203,102 @@ export class SearchService {
    */
   public isActive(): boolean {
     return this.isSearchActive;
+  }
+
+  /**
+   * Clear all text highlights
+   */
+  public clearHighlights(): void {
+    this.highlightedElements.forEach((element) => {
+      const parent = element.parentNode;
+      if (parent) {
+        parent.replaceChild(document.createTextNode(element.textContent || ''), element);
+        parent.normalize(); // Merge adjacent text nodes
+      }
+    });
+    this.highlightedElements = [];
+  }
+
+  /**
+   * Highlight matching text in messages
+   */
+  public highlightText(searchTerm: string): void {
+    // Clear previous highlights
+    this.clearHighlights();
+
+    if (!searchTerm.trim()) {
+      return;
+    }
+
+    const regex = new RegExp(`(${this.escapeRegex(searchTerm)})`, 'gi');
+
+    this.searchResults.forEach((result) => {
+      this.highlightInElement(result.element, regex);
+    });
+  }
+
+  /**
+   * Highlight text within an element
+   */
+  private highlightInElement(element: HTMLElement, regex: RegExp): void {
+    const walker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+
+    const nodesToReplace: { node: Node; parent: Node }[] = [];
+
+    let node;
+    while ((node = walker.nextNode())) {
+      if (node.textContent && regex.test(node.textContent)) {
+        nodesToReplace.push({ node, parent: node.parentNode! });
+      }
+    }
+
+    nodesToReplace.forEach(({ node, parent }) => {
+      const text = node.textContent || '';
+      const fragment = document.createDocumentFragment();
+      let lastIndex = 0;
+      regex.lastIndex = 0; // Reset regex
+
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        // Add text before match
+        if (match.index > lastIndex) {
+          fragment.appendChild(
+            document.createTextNode(text.substring(lastIndex, match.index))
+          );
+        }
+
+        // Add highlighted match
+        const mark = document.createElement('mark');
+        mark.textContent = match[0];
+        mark.style.backgroundColor = '#ffeb3b';
+        mark.style.color = '#000';
+        mark.style.padding = '2px 4px';
+        mark.style.borderRadius = '2px';
+        mark.style.fontWeight = '500';
+        this.highlightedElements.push(mark);
+        fragment.appendChild(mark);
+
+        lastIndex = regex.lastIndex;
+      }
+
+      // Add remaining text
+      if (lastIndex < text.length) {
+        fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+      }
+
+      parent.replaceChild(fragment, node);
+    });
+  }
+
+  /**
+   * Escape special regex characters
+   */
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }
 

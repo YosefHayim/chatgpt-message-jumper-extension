@@ -88,11 +88,25 @@ export class NavigationService {
     const message = messageService.getMessage(this.state.currentIndex);
     if (!message) return;
 
+    // For first/last messages, use immediate scroll to ensure we reach them
+    const isFirstOrLast = this.state.currentIndex === 0 ||
+                          this.state.currentIndex === this.state.totalMessages - 1;
+
     // Smooth scroll to the message
     message.element.scrollIntoView({
-      behavior: 'smooth',
+      behavior: isFirstOrLast ? 'auto' : 'smooth',
       block: 'center',
     });
+
+    // For first/last, force a secondary scroll to ensure we're there
+    if (isFirstOrLast) {
+      setTimeout(() => {
+        message.element.scrollIntoView({
+          behavior: 'auto',
+          block: 'start',
+        });
+      }, 100);
+    }
 
     // Add visual highlight
     this.highlightMessage(message.element);
