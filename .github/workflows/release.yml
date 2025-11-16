@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:coverage
+
+      - name: Build Chrome/Edge package
+        run: npm run build:chrome
+
+      - name: Build Firefox package
+        run: npm run build:firefox
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            # First release - get all commits
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --reverse)
+          else
+            # Get commits since previous tag
+            CHANGELOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" --reverse)
+          fi
+
+          # Save changelog to file
+          echo "$CHANGELOG" > CHANGELOG.txt
+
+          # Also create a formatted changelog
+          echo "## What's Changed" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "$CHANGELOG" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${{ steps.version.outputs.tag }}" >> RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          files: |
+            ai-conversation-navigator-chrome.zip
+            ai-conversation-navigator-firefox.zip
+            RELEASES.md
+            CHANGELOG.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate release summary
+        run: |
+          echo "## 🎉 Release ${{ steps.version.outputs.version }} Created!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Chrome/Edge: \`ai-conversation-navigator-chrome.zip\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Firefox: \`ai-conversation-navigator-firefox.zip\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Release Page](${{ steps.create_release.outputs.upload_url }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Full Changelog](https://github.com/${{ github.repository }}/blob/main/RELEASES.md)" >> $GITHUB_STEP_SUMMARY
+
+  publish-notification:
+    name: Publish Notification
+    runs-on: ubuntu-latest
+    needs: create-release
+
+    steps:
+      - name: Extract version
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Success notification
+        run: |
+          echo "✅ Release ${{ steps.version.outputs.version }} published successfully!"
+          echo ""
+          echo "Next steps:"
+          echo "1. Download the release artifacts"
+          echo "2. Upload to Chrome Web Store"
+          echo "3. Upload to Firefox Add-ons"
+          echo "4. Upload to Microsoft Edge Add-ons"
+          echo ""
+          echo "See docs/guide-to-publish-extension.md for detailed instructions"
