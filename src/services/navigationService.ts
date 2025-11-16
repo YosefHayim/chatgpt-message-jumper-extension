@@ -5,6 +5,7 @@
 
 import { NavigationDirection, NavigationState } from '~/src/types';
 import messageService from './messageService';
+import logger from '../utils/logger';
 
 export class NavigationService {
   private static instance: NavigationService;
@@ -28,12 +29,19 @@ export class NavigationService {
    * Initialize navigation state
    */
   public initialize(): void {
+    logger.info('NavigationService', 'Initializing navigation service');
     const messages = messageService.getAssistantMessages();
     this.state.totalMessages = messages.length;
 
     if (messages.length > 0) {
       // Start at the closest visible message
       this.state.currentIndex = messageService.findClosestVisibleMessage();
+      logger.debug('NavigationService', 'Navigation initialized', {
+        totalMessages: this.state.totalMessages,
+        currentIndex: this.state.currentIndex,
+      });
+    } else {
+      logger.warn('NavigationService', 'No messages found during initialization');
     }
   }
 
@@ -41,16 +49,32 @@ export class NavigationService {
    * Navigate to the next message based on current direction
    */
   public navigateNext(): void {
-    if (!this.state.enabled) return;
+    if (!this.state.enabled) {
+      logger.debug('NavigationService', 'Navigation is disabled, skipping navigateNext');
+      return;
+    }
 
     const messages = messageService.getAssistantMessages();
-    if (messages.length === 0) return;
+    if (messages.length === 0) {
+      logger.warn('NavigationService', 'No messages available for navigation');
+      return;
+    }
+
+    const previousIndex = this.state.currentIndex;
+    const previousDirection = this.state.direction;
 
     if (this.state.direction === NavigationDirection.DOWN) {
       this.navigateDown();
     } else {
       this.navigateUp();
     }
+
+    logger.debug('NavigationService', 'Navigated to next message', {
+      previousIndex,
+      currentIndex: this.state.currentIndex,
+      previousDirection,
+      currentDirection: this.state.direction,
+    });
 
     this.scrollToCurrentMessage();
   }
@@ -63,6 +87,7 @@ export class NavigationService {
       this.state.currentIndex++;
     } else {
       // Reached the end, switch direction
+      logger.info('NavigationService', 'Reached end of messages, switching direction to UP');
       this.state.direction = NavigationDirection.UP;
       this.state.currentIndex = this.state.totalMessages - 1;
     }
@@ -76,6 +101,7 @@ export class NavigationService {
       this.state.currentIndex--;
     } else {
       // Reached the beginning, switch direction
+      logger.info('NavigationService', 'Reached beginning of messages, switching direction to DOWN');
       this.state.direction = NavigationDirection.DOWN;
       this.state.currentIndex = 0;
     }
@@ -86,7 +112,12 @@ export class NavigationService {
    */
   private scrollToCurrentMessage(): void {
     const message = messageService.getMessage(this.state.currentIndex);
-    if (!message) return;
+    if (!message) {
+      logger.error('NavigationService', 'Could not find message to scroll to', {
+        currentIndex: this.state.currentIndex,
+      });
+      return;
+    }
 
     // Smooth scroll to the message
     message.element.scrollIntoView({

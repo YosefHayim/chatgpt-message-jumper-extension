@@ -10,6 +10,7 @@ import searchService from './services/searchService';
 import bookmarkService from './services/bookmarkService';
 import conversationTrackerService from './services/conversationTrackerService';
 import storageService from './services/storageService';
+import logger from './utils/logger';
 import { NavigationDirection } from './types';
 import { formatTokenCount, formatCharacterCount } from './utils/tokenEstimator';
 
@@ -35,53 +36,76 @@ class AIConversationNavigator {
   }
 
   private async initialize(): Promise<void> {
+    logger.info('ContentScript', 'Initializing AI Conversation Navigator');
+
     // Check if platform is supported
     if (!platformDetector.isSupported()) {
+      logger.warn('ContentScript', 'Platform not supported', { url: window.location.href });
       console.log('AI Navigator: Platform not supported');
       return;
     }
+
+    const platform = platformDetector.getPlatformName();
+    logger.info('ContentScript', `Platform detected: ${platform}`, { url: window.location.href });
 
     // Load settings
     const settings = await storageService.loadSettings();
     this.enabled = settings.enabled;
 
     if (!this.enabled) {
+      logger.info('ContentScript', 'Extension is disabled in settings');
       return;
     }
 
+    logger.debug('ContentScript', 'Extension enabled, proceeding with setup');
+
     // Wait for page to be ready
     if (document.readyState === 'loading') {
+      logger.debug('ContentScript', 'Document still loading, waiting for DOMContentLoaded');
       document.addEventListener('DOMContentLoaded', () => this.setupExtension());
     } else {
+      logger.debug('ContentScript', 'Document ready, setting up extension immediately');
       this.setupExtension();
     }
 
     // Listen for settings changes
     storageService.onSettingsChanged((newSettings) => {
+      logger.info('ContentScript', 'Settings changed', newSettings);
       this.enabled = newSettings.enabled;
       if (newSettings.enabled) {
+        logger.info('ContentScript', 'Extension re-enabled, refreshing');
         this.refreshExtension();
       } else {
+        logger.info('ContentScript', 'Extension disabled, cleaning up');
         this.cleanup();
       }
     });
   }
 
   private setupExtension(): void {
+    logger.info('ContentScript', 'Setting up extension components');
+
     // Scan for messages
+    logger.debug('ContentScript', 'Scanning for messages');
     messageService.scanMessages();
 
     // Initialize navigation
+    logger.debug('ContentScript', 'Initializing navigation service');
     navigationService.initialize();
 
     // Create UI
+    logger.debug('ContentScript', 'Creating UI components');
     this.createUI();
 
     // Setup search functionality
+    logger.debug('ContentScript', 'Setting up search functionality');
     this.setupSearch();
 
     // Observe DOM changes
+    logger.debug('ContentScript', 'Setting up DOM observer');
     this.observeDOMChanges();
+
+    logger.info('ContentScript', 'Extension setup complete');
   }
 
   private setupSearch(): void {
@@ -301,20 +325,24 @@ class AIConversationNavigator {
   }
 
   private copyAllResponses(): void {
+    logger.info('ContentScript', 'Copying all AI responses');
     const messages = messageService.getAssistantMessages();
     const content = messages.map((msg, index) => {
       return `--- AI Response ${index + 1} ---\n\n${msg.content}\n`;
     }).join('\n');
 
     navigator.clipboard.writeText(content).then(() => {
+      logger.info('ContentScript', 'Successfully copied all responses', { count: messages.length });
       this.showNotification('✅ Copied all AI responses to clipboard!');
     }).catch((err) => {
+      logger.error('ContentScript', 'Failed to copy responses to clipboard', err);
       console.error('Failed to copy:', err);
       this.showNotification('❌ Failed to copy to clipboard');
     });
   }
 
   private exportToMarkdown(): void {
+    logger.info('ContentScript', 'Exporting conversation to Markdown');
     const messages = messageService.getAssistantMessages();
     const stats = messageService.getConversationStats();
     const platform = platformDetector.getPlatformName();
@@ -336,13 +364,19 @@ class AIConversationNavigator {
     const blob = new Blob([markdown], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    const filename = `${platform.toLowerCase()}-conversation-${date}.md`;
     a.href = url;
-    a.download = `${platform.toLowerCase()}-conversation-${date}.md`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
+    logger.info('ContentScript', 'Successfully exported to Markdown', {
+      filename,
+      messageCount: messages.length,
+      stats,
+    });
     this.showNotification('✅ Conversation exported to Markdown!');
   }
 
@@ -717,9 +751,11 @@ class AIConversationNavigator {
   }
 
   private refreshExtension(): void {
+    logger.debug('ContentScript', 'Refreshing extension');
     navigationService.refresh();
     this.updateUI();
     this.updatePageTitle();
+    logger.debug('ContentScript', 'Extension refresh complete');
   }
 
   private addBookmarkButtons(): void {
@@ -1177,6 +1213,8 @@ class AIConversationNavigator {
   }
 
   private cleanup(): void {
+    logger.info('ContentScript', 'Cleaning up extension');
+
     if (this.refreshTimeout) {
       clearTimeout(this.refreshTimeout);
       this.refreshTimeout = null;
@@ -1211,6 +1249,8 @@ class AIConversationNavigator {
     document.title = this.originalTitle;
 
     searchService.clearSearch();
+
+    logger.info('ContentScript', 'Cleanup complete');
   }
 }
 

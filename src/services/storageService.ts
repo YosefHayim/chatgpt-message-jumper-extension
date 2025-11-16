@@ -4,6 +4,7 @@
  */
 
 import { ExtensionSettings } from '~/src/types';
+import logger from '../utils/logger';
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
   enabled: true,
@@ -31,10 +32,13 @@ export class StorageService {
    */
   public async loadSettings(): Promise<ExtensionSettings> {
     try {
+      logger.debug('StorageService', 'Loading settings from Chrome storage');
       const result = await chrome.storage.sync.get('settings');
       this.settings = result.settings ? { ...DEFAULT_SETTINGS, ...result.settings } : DEFAULT_SETTINGS;
+      logger.info('StorageService', 'Settings loaded successfully', this.settings);
       return this.settings;
     } catch (error) {
+      logger.error('StorageService', 'Failed to load settings', error);
       console.error('Failed to load settings:', error);
       return DEFAULT_SETTINGS;
     }
@@ -45,9 +49,12 @@ export class StorageService {
    */
   public async saveSettings(settings: Partial<ExtensionSettings>): Promise<void> {
     try {
+      logger.debug('StorageService', 'Saving settings to Chrome storage', settings);
       this.settings = { ...this.settings, ...settings };
       await chrome.storage.sync.set({ settings: this.settings });
+      logger.info('StorageService', 'Settings saved successfully');
     } catch (error) {
+      logger.error('StorageService', 'Failed to save settings', error);
       console.error('Failed to save settings:', error);
       throw error;
     }
@@ -81,8 +88,10 @@ export class StorageService {
    * Reset to default settings
    */
   public async resetSettings(): Promise<void> {
+    logger.info('StorageService', 'Resetting settings to defaults');
     this.settings = DEFAULT_SETTINGS;
     await chrome.storage.sync.set({ settings: DEFAULT_SETTINGS });
+    logger.info('StorageService', 'Settings reset successfully');
   }
 
   /**

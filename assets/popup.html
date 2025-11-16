@@ -71,6 +71,53 @@
       </ul>
     </section>
 
+    <!-- Debug Logs Section -->
+    <section class="section">
+      <h2 class="section-title">Debug Logs</h2>
+
+      <!-- Logger Enabled Toggle -->
+      <div class="setting-item">
+        <span>Enable Logging</span>
+        <label class="toggle">
+          <input type="checkbox" id="logger-enabled" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Log Level -->
+      <div class="setting-item">
+        <span>Log Level</span>
+        <select id="log-level-select" class="select">
+          <option value="0">Debug</option>
+          <option value="1">Info</option>
+          <option value="2">Warning</option>
+          <option value="3">Error</option>
+        </select>
+      </div>
+
+      <!-- Log Statistics -->
+      <div class="log-stats">
+        <div class="stat-item">
+          <span>Total Logs:</span>
+          <span id="log-total" class="stat-value">0</span>
+        </div>
+        <div class="stat-item">
+          <span>Errors:</span>
+          <span id="log-errors" class="stat-value">0</span>
+        </div>
+        <div class="stat-item">
+          <span>Warnings:</span>
+          <span id="log-warnings" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <!-- Log Actions -->
+      <div class="log-actions">
+        <button id="download-logs" class="btn btn-primary">Download Logs</button>
+        <button id="clear-logs" class="btn btn-secondary">Clear Logs</button>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
       <p>Works on ChatGPT, Claude & Gemini</p>
