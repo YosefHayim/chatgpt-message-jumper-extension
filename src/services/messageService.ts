@@ -91,31 +91,58 @@ export class MessageService {
    */
   public getAllMessages(): Message[] {
     const config = platformDetector.getConfig();
-    const allElements = document.querySelectorAll<HTMLElement>(config.messageSelector);
     const allMessages: Message[] = [];
 
-    allElements.forEach((element, index) => {
+    console.log('[MessageService Debug] Getting all messages');
+    console.log('[MessageService Debug] User message selector:', config.userMessageSelector);
+
+    // Get assistant messages
+    const assistantElements = document.querySelectorAll<HTMLElement>(config.messageSelector);
+    console.log('[MessageService Debug] Found', assistantElements.length, 'assistant messages');
+
+    assistantElements.forEach((element, index) => {
       const content = this.extractContent(element);
       if (!content) return;
-
-      // Try to determine if this is a user or assistant message
-      // This is a simple heuristic - could be improved per platform
-      const isUserMessage = element.getAttribute('data-role') === 'user' ||
-        element.classList.contains('user') ||
-        element.querySelector('[data-role="user"]') !== null;
 
       const characterCount = content.length;
       const wordCount = content.split(/\s+/).filter((word) => word.length > 0).length;
 
       allMessages.push({
         element,
-        role: isUserMessage ? MessageRole.USER : MessageRole.ASSISTANT,
+        role: MessageRole.ASSISTANT,
         content,
         index,
         characterCount,
         wordCount,
       });
     });
+
+    // Get user messages if selector is available
+    if (config.userMessageSelector) {
+      const userElements = document.querySelectorAll<HTMLElement>(config.userMessageSelector);
+      console.log('[MessageService Debug] Found', userElements.length, 'user messages');
+
+      userElements.forEach((element, index) => {
+        const content = this.extractContent(element);
+        if (!content) return;
+
+        const characterCount = content.length;
+        const wordCount = content.split(/\s+/).filter((word) => word.length > 0).length;
+
+        allMessages.push({
+          element,
+          role: MessageRole.USER,
+          content,
+          index,
+          characterCount,
+          wordCount,
+        });
+      });
+    }
+
+    console.log('[MessageService Debug] Total messages:', allMessages.length);
+    console.log('[MessageService Debug] User messages:', allMessages.filter(m => m.role === MessageRole.USER).length);
+    console.log('[MessageService Debug] Assistant messages:', allMessages.filter(m => m.role === MessageRole.ASSISTANT).length);
 
     return allMessages;
   }

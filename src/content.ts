@@ -759,16 +759,23 @@ class AIConversationNavigator {
   }
 
   private addBookmarkButtons(): void {
+    console.log('[Bookmark Debug] Adding bookmark buttons');
     const messages = messageService.getAssistantMessages();
     const platform = platformDetector.getPlatformName();
+
+    console.log('[Bookmark Debug] Found', messages.length, 'messages');
+    console.log('[Bookmark Debug] Platform:', platform);
 
     messages.forEach((msg, index) => {
       // Skip if bookmark button already exists
       if (msg.element.querySelector('.ai-bookmark-btn')) {
+        console.log('[Bookmark Debug] Skipping message', index, '- button already exists');
         return;
       }
 
       const isBookmarked = bookmarkService.isBookmarked(index);
+      console.log('[Bookmark Debug] Message', index, 'bookmarked:', isBookmarked);
+
       const bookmarkBtn = document.createElement('button');
       bookmarkBtn.className = 'ai-bookmark-btn';
       bookmarkBtn.innerHTML = isBookmarked ? '🔖' : '🔖';
@@ -817,10 +824,15 @@ class AIConversationNavigator {
   }
 
   private async toggleBookmark(index: number, element: HTMLElement, button: HTMLButtonElement): Promise<void> {
+    console.log('[Bookmark Debug] Toggle bookmark clicked for message', index);
     const isCurrentlyBookmarked = bookmarkService.isBookmarked(index);
     const platform = platformDetector.getPlatformName();
 
+    console.log('[Bookmark Debug] Currently bookmarked:', isCurrentlyBookmarked);
+    console.log('[Bookmark Debug] Platform:', platform);
+
     if (isCurrentlyBookmarked) {
+      console.log('[Bookmark Debug] Removing bookmark');
       await bookmarkService.removeBookmark(index);
       button.style.background = 'rgba(0, 0, 0, 0.6)';
       button.style.borderColor = 'rgba(255, 255, 255, 0.2)';
@@ -828,19 +840,27 @@ class AIConversationNavigator {
       this.showNotification('🔖 Bookmark removed');
     } else {
       // Show prompt for tag
+      console.log('[Bookmark Debug] Showing prompt for tag');
       const tag = prompt('Add a tag for this bookmark (e.g., "working code", "good explanation"):', '');
+      console.log('[Bookmark Debug] User entered tag:', tag);
+
       if (tag !== null) {
+        console.log('[Bookmark Debug] Adding bookmark with tag:', tag || 'Untitled');
         await bookmarkService.addBookmark(index, tag || 'Untitled', '', platform);
         button.style.background = 'rgba(16, 163, 127, 0.2)';
         button.style.borderColor = '#10a37f';
         button.style.opacity = '1';
         button.title = 'Remove bookmark';
         this.showNotification('🔖 Bookmark added!');
+        console.log('[Bookmark Debug] Bookmark added successfully');
+      } else {
+        console.log('[Bookmark Debug] User cancelled bookmark');
       }
     }
 
     // Refresh bookmarks panel if open
     if (this.bookmarksPanel && this.bookmarksPanel.style.display !== 'none') {
+      console.log('[Bookmark Debug] Refreshing bookmarks panel');
       this.updateBookmarksPanel();
     }
   }

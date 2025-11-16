@@ -36,15 +36,21 @@ export class BookmarkService {
    */
   private async loadBookmarks(): Promise<void> {
     try {
+      console.log('[BookmarkService Debug] Loading bookmarks from storage');
       const stored = await storageService.get(this.storageKey);
+      console.log('[BookmarkService Debug] Stored bookmarks:', stored);
+
       if (stored && Array.isArray(stored)) {
         this.bookmarks.clear();
         stored.forEach((bookmark: Bookmark) => {
           this.bookmarks.set(bookmark.messageIndex, bookmark);
         });
+        console.log('[BookmarkService Debug] Loaded', this.bookmarks.size, 'bookmarks');
+      } else {
+        console.log('[BookmarkService Debug] No bookmarks found in storage');
       }
     } catch (error) {
-      console.error('Failed to load bookmarks:', error);
+      console.error('[BookmarkService Debug] Failed to load bookmarks:', error);
     }
   }
 
@@ -54,9 +60,12 @@ export class BookmarkService {
   private async saveBookmarks(): Promise<void> {
     try {
       const bookmarksArray = Array.from(this.bookmarks.values());
+      console.log('[BookmarkService Debug] Saving', bookmarksArray.length, 'bookmarks to storage');
+      console.log('[BookmarkService Debug] Bookmarks:', bookmarksArray);
       await storageService.set(this.storageKey, bookmarksArray);
+      console.log('[BookmarkService Debug] Bookmarks saved successfully');
     } catch (error) {
-      console.error('Failed to save bookmarks:', error);
+      console.error('[BookmarkService Debug] Failed to save bookmarks:', error);
     }
   }
 
@@ -70,6 +79,8 @@ export class BookmarkService {
     platform: string = '',
     conversationId?: string
   ): Promise<void> {
+    console.log('[BookmarkService Debug] Adding bookmark:', { messageIndex, tag, note, platform, conversationId });
+
     const bookmark: Bookmark = {
       messageIndex,
       tag: tag.trim(),
@@ -80,6 +91,7 @@ export class BookmarkService {
     };
 
     this.bookmarks.set(messageIndex, bookmark);
+    console.log('[BookmarkService Debug] Bookmark added to map, total bookmarks:', this.bookmarks.size);
     await this.saveBookmarks();
   }
 

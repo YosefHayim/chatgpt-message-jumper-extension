@@ -42,6 +42,7 @@ export interface PlatformConfig {
   name: string;
   platform: Platform;
   messageSelector: string;
+  userMessageSelector?: string;
   roleAttribute?: string;
   contentSelector?: string;
   containerSelector?: string;

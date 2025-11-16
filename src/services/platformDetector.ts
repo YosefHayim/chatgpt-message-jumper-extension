@@ -10,6 +10,7 @@ const PLATFORM_CONFIGS: Record<Platform, PlatformConfig> = {
     name: 'ChatGPT',
     platform: Platform.CHATGPT,
     messageSelector: '[data-message-author-role="assistant"]',
+    userMessageSelector: '[data-message-author-role="user"]',
     roleAttribute: 'data-message-author-role',
     maxContextTokens: 128000, // GPT-4 Turbo context window
   },
