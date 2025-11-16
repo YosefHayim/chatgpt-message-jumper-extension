@@ -931,12 +931,16 @@ class AIConversationNavigator {
   private updateBookmarksPanel(): void {
     if (!this.bookmarksPanel) return;
 
-    const bookmarks = bookmarkService.getAllBookmarks();
+    const currentPlatform = platformDetector.getPlatformName();
+    const allBookmarks = bookmarkService.getAllBookmarks();
+
+    // Filter bookmarks to only show those from the current platform
+    const bookmarks = allBookmarks.filter(bookmark => bookmark.platform === currentPlatform);
 
     if (bookmarks.length === 0) {
       this.bookmarksPanel.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="margin: 0; font-size: 16px; font-weight: 600;">📚 Bookmarks</h3>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 600;">📚 ${currentPlatform} Bookmarks</h3>
           <button id="close-bookmarks" style="
             background: transparent;
             border: none;
@@ -947,14 +951,14 @@ class AIConversationNavigator {
           ">✕</button>
         </div>
         <div style="text-align: center; padding: 40px 20px; color: #888;">
-          No bookmarks yet.<br/>
+          No ${currentPlatform} bookmarks yet.<br/>
           Hover over any AI response and click the bookmark icon.
         </div>
       `;
     } else {
       let bookmarksHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="margin: 0; font-size: 16px; font-weight: 600;">📚 Bookmarks (${bookmarks.length})</h3>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 600;">📚 ${currentPlatform} Bookmarks (${bookmarks.length})</h3>
           <button id="close-bookmarks" style="
             background: transparent;
             border: none;
@@ -984,7 +988,6 @@ class AIConversationNavigator {
             </div>
             <div style="font-size: 12px; color: #aaa;">
               Response #${bookmark.messageIndex + 1}
-              ${bookmark.platform ? ` • ${bookmark.platform}` : ''}
             </div>
           </div>
         `;
