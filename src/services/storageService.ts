@@ -96,6 +96,31 @@ export class StorageService {
       }
     });
   }
+
+  /**
+   * Generic get method for any key
+   */
+  public async get(key: string): Promise<any> {
+    try {
+      const result = await chrome.storage.sync.get(key);
+      return result[key];
+    } catch (error) {
+      console.error(`Failed to get ${key} from storage:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Generic set method for any key
+   */
+  public async set(key: string, value: any): Promise<void> {
+    try {
+      await chrome.storage.sync.set({ [key]: value });
+    } catch (error) {
+      console.error(`Failed to set ${key} in storage:`, error);
+      throw error;
+    }
+  }
 }
 
 export default StorageService.getInstance();

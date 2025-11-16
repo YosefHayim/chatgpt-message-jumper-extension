@@ -943,7 +943,7 @@ class AIConversationNavigator {
     });
   }
 
-  private async toggleBookmark(index: number, element: HTMLElement, button: HTMLButtonElement): Promise<void> {
+  private async toggleBookmark(index: number, _element: HTMLElement, button: HTMLButtonElement): Promise<void> {
     const isCurrentlyBookmarked = bookmarkService.isBookmarked(index);
     const platform = platformDetector.getPlatformName();
 

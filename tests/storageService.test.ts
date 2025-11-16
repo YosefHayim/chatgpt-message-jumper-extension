@@ -21,7 +21,7 @@ describe('StorageService', () => {
     global.chrome = {
       storage: {
         sync: {
-          get: jest.fn((keys) => {
+          get: jest.fn((_keys) => {
             return Promise.resolve(mockStorageData);
           }),
           set: jest.fn((data) => {

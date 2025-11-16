@@ -11,6 +11,9 @@ module.exports = {
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/*.stories.tsx',
+    '!src/content.ts', // Exclude main content script (integration code)
+    '!src/contents/**', // Exclude contents folder
+    '!src/popup.ts', // Exclude popup script (UI code)
   ],
   coverageThreshold: {
     global: {
