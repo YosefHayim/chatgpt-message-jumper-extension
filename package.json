@@ -10,9 +10,13 @@
     "build": "npm run clean && npm run bundle && npm run copy-assets",
     "bundle": "esbuild src/content.ts --bundle --outfile=dist/content.js --format=iife --target=chrome90 && esbuild src/popup.ts --bundle --outfile=dist/popup.js --format=iife --target=chrome90",
     "copy-assets": "mkdir -p dist && cp -r icons dist/ && cp assets/manifest.json assets/popup.html assets/popup.css assets/styles.css dist/",
+    "build:chrome": "npm run build && ./scripts/build-chrome.sh",
+    "build:firefox": "npm run build && ./scripts/build-firefox.sh",
+    "build:all": "npm run build:chrome && npm run build:firefox",
     "test": "jest",
     "test:watch": "jest --watch",
-    "clean": "rm -rf dist"
+    "test:coverage": "jest --coverage",
+    "clean": "rm -rf dist dist-firefox *.zip"
   },
   "dependencies": {},
   "devDependencies": {
