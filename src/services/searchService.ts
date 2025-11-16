@@ -10,7 +10,7 @@ export class SearchService {
   private static instance: SearchService;
   private currentSearchTerm: string = '';
   private searchResults: SearchResult[] = [];
-  private currentResultIndex: number = 0;
+  private currentResultIndex: number = -1;
   private isSearchActive: boolean = false;
 
   private constructor() {
@@ -49,6 +49,7 @@ export class SearchService {
   public search(searchTerm: string): SearchResult[] {
     this.currentSearchTerm = searchTerm.toLowerCase();
     this.searchResults = [];
+    this.currentResultIndex = -1;
 
     if (!searchTerm.trim()) {
       return [];
@@ -71,7 +72,20 @@ export class SearchService {
       }
     });
 
+    // If we have results, start at the first one and scroll to it
+    if (this.searchResults.length > 0) {
+      this.currentResultIndex = 0;
+      this.scrollToResult(0);
+    }
+
     return this.searchResults;
+  }
+
+  /**
+   * Escape special regex characters
+   */
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   /**
@@ -79,7 +93,8 @@ export class SearchService {
    */
   private countMatches(text: string, term: string): number {
     if (!term) return 0;
-    const regex = new RegExp(term, 'gi');
+    const escapedTerm = this.escapeRegex(term);
+    const regex = new RegExp(escapedTerm, 'gi');
     const matches = text.match(regex);
     return matches ? matches.length : 0;
   }
@@ -173,7 +188,7 @@ export class SearchService {
 
     return {
       totalResults: this.searchResults.length,
-      currentIndex: this.currentResultIndex + 1,
+      currentIndex: Math.max(1, this.currentResultIndex + 1),
       totalMatches,
     };
   }
@@ -184,7 +199,7 @@ export class SearchService {
   public clearSearch(): void {
     this.currentSearchTerm = '';
     this.searchResults = [];
-    this.currentResultIndex = 0;
+    this.currentResultIndex = -1;
     this.isSearchActive = false;
   }
 
@@ -201,6 +216,16 @@ export class SearchService {
    */
   public isActive(): boolean {
     return this.isSearchActive;
+  }
+
+  /**
+   * Reset service state (primarily for testing)
+   */
+  public reset(): void {
+    this.currentSearchTerm = '';
+    this.searchResults = [];
+    this.currentResultIndex = -1;
+    this.isSearchActive = false;
   }
 }
 

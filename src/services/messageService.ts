@@ -206,6 +206,14 @@ export class MessageService {
   public getMessageCount(): number {
     return this.assistantMessages.length;
   }
+
+  /**
+   * Reset service state (primarily for testing)
+   */
+  public reset(): void {
+    this.messages = [];
+    this.assistantMessages = [];
+  }
 }
 
 export default MessageService.getInstance();

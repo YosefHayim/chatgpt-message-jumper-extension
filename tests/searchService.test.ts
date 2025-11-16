@@ -14,6 +14,7 @@ describe('SearchService', () => {
 
   beforeEach(() => {
     searchService = SearchService.getInstance();
+    searchService.reset(); // Reset state between tests
 
     // Create mock messages
     mockMessages = [
@@ -512,6 +513,113 @@ describe('SearchService', () => {
       const result = results.find(r => r.messageIndex === 2);
       expect(result!.preview).toBeTruthy();
       expect(result!.preview.toLowerCase()).toContain('dog');
+    });
+  });
+
+  describe('highlight functionality', () => {
+    test('should apply highlight when scrolling to result', () => {
+      const results = searchService.search('test');
+
+      searchService.nextResult();
+
+      // Check that the element's style was modified
+      const highlightedElement = results[1].element;
+      expect(highlightedElement.style.outline).toBeTruthy();
+    });
+
+    test('should highlight correct result element', () => {
+      searchService.search('test');
+
+      searchService.nextResult(); // Go to second result (index 1)
+
+      const results = searchService.getResults();
+      const secondElement = results[1].element;
+
+      // The second result should have been highlighted
+      expect(secondElement.style.outline).toBe('2px solid #ff9800');
+    });
+
+    test('should highlight when navigating backwards', () => {
+      searchService.search('test');
+
+      searchService.nextResult(); // index 1
+      searchService.nextResult(); // index 2
+      searchService.previousResult(); // back to index 1
+
+      const results = searchService.getResults();
+      const secondElement = results[1].element;
+
+      expect(secondElement.style.outline).toBe('2px solid #ff9800');
+    });
+
+    test('should restore original outline after timeout', () => {
+      jest.useFakeTimers();
+
+      // Get mock messages to find the first result element before search
+      const mockElement = mockMessages[0].element;
+      const originalOutline = mockElement.style.outline || '';
+
+      const results = searchService.search('test');
+      const firstElement = results[0].element as any;
+
+      // Should have new outline immediately after search
+      expect(firstElement.style.outline).toBe('2px solid #ff9800');
+
+      // Fast-forward past the timeout (1500ms in implementation)
+      jest.advanceTimersByTime(1500);
+
+      // Should restore original outline
+      expect(firstElement.style.outline).toBe(originalOutline);
+
+      jest.useRealTimers();
+    });
+
+    test('should handle highlight with no original outline', () => {
+      const results = searchService.search('test');
+      const secondElement = results[1].element;
+
+      // Clear any outline
+      secondElement.style.outline = '';
+
+      searchService.nextResult(); // Navigate to second result (index 1)
+
+      // Should apply highlight
+      expect(secondElement.style.outline).toBe('2px solid #ff9800');
+    });
+
+    test('should apply highlight on initial search', () => {
+      const results = searchService.search('test');
+
+      // Search automatically scrolls to first result, which should highlight it
+      expect(results[0].element.style.outline).toBe('2px solid #ff9800');
+    });
+
+    test('should highlight when jumping between results', () => {
+      searchService.search('test');
+
+      // Navigate to third result
+      searchService.nextResult(); // index 1
+      searchService.nextResult(); // index 2
+
+      const results = searchService.getResults();
+      const thirdElement = results[2].element;
+
+      expect(thirdElement.style.outline).toBe('2px solid #ff9800');
+    });
+
+    test('should handle rapid navigation with highlights', () => {
+      searchService.search('test');
+
+      // Rapidly navigate
+      searchService.nextResult();
+      searchService.nextResult();
+      searchService.previousResult();
+      searchService.nextResult();
+
+      const results = searchService.getResults();
+
+      // Last navigated result (index 2) should be highlighted
+      expect(results[2].element.style.outline).toBe('2px solid #ff9800');
     });
   });
 });
