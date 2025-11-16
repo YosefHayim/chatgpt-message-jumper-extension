@@ -776,6 +776,7 @@ class AIConversationNavigator {
     navigationService.refresh();
     this.updateUI();
     this.updatePageTitle();
+    this.addBookmarkButtons();
     this.checkForImages();
     logger.debug('ContentScript', 'Extension refresh complete');
   }
@@ -1303,13 +1304,14 @@ class AIConversationNavigator {
       }
     });
 
-    // Show/hide download button based on image presence
-    if (hasImages && !this.menuCollapsed) {
-      downloadBtn.style.display = '';
-    } else if (this.menuCollapsed) {
-      downloadBtn.style.display = 'none';
-    } else {
-      downloadBtn.style.display = 'none';
+    // Determine what the display should be
+    const shouldShow = hasImages && !this.menuCollapsed;
+    const currentDisplay = downloadBtn.style.display;
+    const newDisplay = shouldShow ? '' : 'none';
+
+    // Only update if it needs to change to avoid triggering MutationObserver
+    if (currentDisplay !== newDisplay) {
+      downloadBtn.style.display = newDisplay;
     }
   }
 
