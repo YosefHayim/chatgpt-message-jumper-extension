@@ -162,7 +162,7 @@ jobs:
           echo "✅ All required files present!"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: extension-build
           path: dist/
@@ -194,14 +194,14 @@ jobs:
         run: npm run build:firefox
 
       - name: Upload Chrome/Edge package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: chrome-edge-package
           path: ai-conversation-navigator-chrome.zip
           retention-days: 30
 
       - name: Upload Firefox package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: firefox-package
           path: ai-conversation-navigator-firefox.zip
