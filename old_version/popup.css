@@ -1,0 +1,6 @@
+body { font-family: system-ui, Arial, sans-serif; width: 240px; padding: 12px; }
+h1 { font-size: 14px; margin: 0 0 10px; }
+.row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+.contact { font-size: 12px; margin-top: 12px; text-align: center; }
+.contact a { text-decoration: none; }
+.contact a:hover { text-decoration: underline; }

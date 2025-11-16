@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>ChatGPT Message Jumper</title>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif; /* A common, clean font */
+      background-color: #343541; /* ChatGPT dark mode background */
+      color: #ececf1; /* ChatGPT dark mode text color */
+      padding: 20px;
+      width: 300px; /* Fixed width for the popup */
+      box-sizing: border-box;
+    }
+    h1 {
+      color: #ececf1; /* Matching text color */
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 10px; /* Space between label text and input/select */
+    }
+    input[type="checkbox"] {
+      accent-color: #10a37f; /* ChatGPT's primary green */
+    }
+    select {
+      background-color: #40414f; /* Slightly lighter than body for contrast */
+      color: #ececf1;
+      border: 1px solid #565869;
+      padding: 5px;
+      border-radius: 5px;
+      flex-grow: 1; /* Allows select to take available space */
+    }
+    .contact {
+      margin-top: 25px;
+      font-size: 12px;
+      text-align: center;
+    }
+    .contact a {
+      color: #10a37f; /* ChatGPT's primary green for links */
+      text-decoration: none;
+    }
+    .contact a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>ChatGPT Message Jumper</h1>
+
+  <label class="row">
+    <input type="checkbox" id="enableExtension" />
+    <span>Enable extension</span>
+  </label>
+
+  <label class="row">
+    <span>Theme</span>
+    <select id="themeSelect">
+      <option value="dark">Dark</option>
+      <option value="light">Light</option>
+    </select>
+  </label>
+
+  <p class="contact">
+    Issues/Bugs: <a href="mailto:josephtechsolutionsil@gmail.com">josephtechsolutionsil@gmail.com</a>
+  </p>
+
+  <script src="popup.js"></script>
+</body>
+</html>
