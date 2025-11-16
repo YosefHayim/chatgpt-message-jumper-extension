@@ -31,6 +31,7 @@ class AIConversationNavigator {
   private originalTitle: string = document.title;
   private messagesCollapsed: boolean = false;
   private menuCollapsed: boolean = false;
+  private bookmarksPanelOpen: boolean = false;
 
   constructor() {
     this.initialize();
@@ -155,6 +156,9 @@ class AIConversationNavigator {
     // Initial UI update
     this.updateUI();
     this.updatePageTitle();
+
+    // Restore bookmark panel state
+    this.loadBookmarkPanelState();
   }
 
   private createStatsPanel(): void {
@@ -289,13 +293,14 @@ class AIConversationNavigator {
     downloadImagesBtn.id = 'download-images-btn';
     downloadImagesBtn.style.display = 'none'; // Hidden by default
 
+    // Order buttons from most to least frequently used
     this.actionsPanel.appendChild(menuToggleBtn);
     this.actionsPanel.appendChild(firstBtn);
     this.actionsPanel.appendChild(lastBtn);
+    this.actionsPanel.appendChild(bookmarksBtn);
     this.actionsPanel.appendChild(copyBtn);
     this.actionsPanel.appendChild(exportBtn);
     this.actionsPanel.appendChild(collapseBtn);
-    this.actionsPanel.appendChild(bookmarksBtn);
     this.actionsPanel.appendChild(codeFilterBtn);
     this.actionsPanel.appendChild(reaskBtn);
     this.actionsPanel.appendChild(downloadImagesBtn);
@@ -897,10 +902,47 @@ class AIConversationNavigator {
       const isVisible = this.bookmarksPanel.style.display !== 'none';
       if (isVisible) {
         this.bookmarksPanel.style.display = 'none';
+        this.bookmarksPanelOpen = false;
       } else {
         this.updateBookmarksPanel();
         this.bookmarksPanel.style.display = 'block';
+        this.bookmarksPanelOpen = true;
       }
+      // Save state to localStorage
+      this.saveBookmarkPanelState();
+    }
+  }
+
+  private saveBookmarkPanelState(): void {
+    try {
+      localStorage.setItem('ai-navigator-bookmarks-open', JSON.stringify(this.bookmarksPanelOpen));
+    } catch (err) {
+      logger.error('ContentScript', 'Failed to save bookmark panel state', err);
+    }
+  }
+
+  private loadBookmarkPanelState(): void {
+    try {
+      const saved = localStorage.getItem('ai-navigator-bookmarks-open');
+      if (saved !== null) {
+        this.bookmarksPanelOpen = JSON.parse(saved);
+
+        // Restore the panel state if it was open
+        if (this.bookmarksPanelOpen) {
+          // Small delay to ensure DOM is ready
+          setTimeout(() => {
+            if (!this.bookmarksPanel) {
+              this.createBookmarksPanel();
+            }
+            if (this.bookmarksPanel) {
+              this.updateBookmarksPanel();
+              this.bookmarksPanel.style.display = 'block';
+            }
+          }, 100);
+        }
+      }
+    } catch (err) {
+      logger.error('ContentScript', 'Failed to load bookmark panel state', err);
     }
   }
 
@@ -1006,6 +1048,8 @@ class AIConversationNavigator {
           navigationService.jumpToMessage(index);
           this.updateUI();
           this.bookmarksPanel!.style.display = 'none';
+          this.bookmarksPanelOpen = false;
+          this.saveBookmarkPanelState();
         });
 
         element.addEventListener('mouseenter', () => {
@@ -1025,6 +1069,8 @@ class AIConversationNavigator {
     closeBtn?.addEventListener('click', () => {
       if (this.bookmarksPanel) {
         this.bookmarksPanel.style.display = 'none';
+        this.bookmarksPanelOpen = false;
+        this.saveBookmarkPanelState();
       }
     });
   }
