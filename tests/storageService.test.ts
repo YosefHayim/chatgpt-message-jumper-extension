@@ -21,16 +21,16 @@ describe('StorageService', () => {
     global.chrome = {
       storage: {
         sync: {
-          get: jest.fn((keys) => {
+          get: jest.fn((_keys) => {
             return Promise.resolve(mockStorageData);
-          }),
-          set: jest.fn((data) => {
+          }) as any,
+          set: jest.fn((data: any) => {
             mockStorageData = { ...mockStorageData, ...data };
             return Promise.resolve();
-          }),
+          }) as any,
         },
         onChanged: {
-          addListener: jest.fn((callback) => {
+          addListener: jest.fn((callback: Function) => {
             mockOnChangedListeners.push(callback);
           }),
         },
@@ -96,7 +96,7 @@ describe('StorageService', () => {
     });
 
     test('should handle storage errors gracefully', async () => {
-      (chrome.storage.sync.get as jest.Mock).mockRejectedValue(new Error('Storage error'));
+      (chrome.storage.sync.get as any).mockRejectedValue(new Error('Storage error'));
 
       const settings = await storageService.loadSettings();
 
@@ -152,7 +152,7 @@ describe('StorageService', () => {
     });
 
     test('should handle storage errors', async () => {
-      (chrome.storage.sync.set as jest.Mock).mockRejectedValue(new Error('Storage error'));
+      (chrome.storage.sync.set as any).mockRejectedValue(new Error('Storage error'));
 
       await expect(storageService.saveSettings({ enabled: false })).rejects.toThrow('Storage error');
     });

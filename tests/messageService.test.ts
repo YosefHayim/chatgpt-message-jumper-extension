@@ -13,6 +13,7 @@ describe('MessageService', () => {
 
   beforeEach(() => {
     messageService = MessageService.getInstance();
+    messageService.reset(); // Reset state between tests
 
     // Mock platformDetector
     jest.spyOn(platformDetector, 'getConfig').mockReturnValue({

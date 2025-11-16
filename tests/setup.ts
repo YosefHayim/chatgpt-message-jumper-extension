@@ -9,7 +9,7 @@ import '@testing-library/jest-dom';
 global.chrome = {
   storage: {
     sync: {
-      get: jest.fn((keys) => Promise.resolve({})),
+      get: jest.fn((_keys) => Promise.resolve({})),
       set: jest.fn(() => Promise.resolve()),
     },
     onChanged: {
@@ -35,3 +35,14 @@ window.location = {
   href: 'https://chatgpt.com',
   origin: 'https://chatgpt.com',
 } as any;
+
+// Add innerText support for JSDOM
+Object.defineProperty(HTMLElement.prototype, 'innerText', {
+  get() {
+    return this.textContent;
+  },
+  set(value) {
+    this.textContent = value;
+  },
+  configurable: true,
+});

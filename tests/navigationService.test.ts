@@ -14,6 +14,7 @@ describe('NavigationService', () => {
 
   beforeEach(() => {
     navService = NavigationService.getInstance();
+    navService.reset(); // Reset state between tests
 
     // Create mock messages
     mockMessages = [
@@ -145,12 +146,15 @@ describe('NavigationService', () => {
     });
 
     test('should switch direction at beginning of conversation', () => {
-      // Manually set to UP direction and first message
-      const state = navService.getState();
-      (state as any).direction = NavigationDirection.UP;
-      (state as any).currentIndex = 0;
+      // Navigate to end to switch to UP direction
+      navService.navigateNext(); // index 1
+      navService.navigateNext(); // index 2 (last)
+      navService.navigateNext(); // Should switch to UP at index 2
 
-      navService.navigateNext();
+      // Now navigate up to beginning
+      navService.navigateNext(); // index 1
+      navService.navigateNext(); // index 0
+      navService.navigateNext(); // Should switch to DOWN at index 0
 
       const newState = navService.getState();
       expect(newState.direction).toBe(NavigationDirection.DOWN);

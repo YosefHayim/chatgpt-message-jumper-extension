@@ -161,6 +161,18 @@ export class NavigationService {
       this.state.currentIndex = Math.max(0, this.state.totalMessages - 1);
     }
   }
+
+  /**
+   * Reset navigation state (primarily for testing)
+   */
+  public reset(): void {
+    this.state = {
+      currentIndex: 0,
+      direction: NavigationDirection.DOWN,
+      totalMessages: 0,
+      enabled: true,
+    };
+  }
 }
 
 export default NavigationService.getInstance();
