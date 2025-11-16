@@ -30,6 +30,7 @@ class AIConversationNavigator {
   private refreshTimeout: number | null = null;
   private originalTitle: string = document.title;
   private messagesCollapsed: boolean = false;
+  private menuCollapsed: boolean = false;
 
   constructor() {
     this.initialize();
@@ -197,16 +198,17 @@ class AIConversationNavigator {
       color: 'white',
       border: 'none',
       borderRadius: '12px',
-      padding: '14px 20px',
+      padding: '10px 14px',
       fontSize: '15px',
       fontWeight: '600',
       cursor: 'pointer',
       boxShadow: '0 4px 12px rgba(16, 163, 127, 0.3)',
       display: 'flex',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: '10px',
       transition: 'all 0.2s ease',
-      minWidth: '140px',
+      width: '100%',
       pointerEvents: 'auto', // Allow button clicks
     });
 
@@ -226,6 +228,12 @@ class AIConversationNavigator {
       marginBottom: '12px',
       pointerEvents: 'auto',
     });
+
+    // Menu toggle button
+    const menuToggleBtn = this.createActionButton('▼ Menu', 'Toggle menu visibility', () => {
+      this.toggleMenu();
+    });
+    menuToggleBtn.id = 'menu-toggle-btn';
 
     // Jump to First button
     const firstBtn = this.createActionButton('⬆️ First', 'Jump to first AI response', () => {
@@ -274,6 +282,14 @@ class AIConversationNavigator {
       this.showReaskPanel();
     });
 
+    // Download images button
+    const downloadImagesBtn = this.createActionButton('🖼️ Download Images', 'Download all images from AI responses', () => {
+      this.downloadAllImages();
+    });
+    downloadImagesBtn.id = 'download-images-btn';
+    downloadImagesBtn.style.display = 'none'; // Hidden by default
+
+    this.actionsPanel.appendChild(menuToggleBtn);
     this.actionsPanel.appendChild(firstBtn);
     this.actionsPanel.appendChild(lastBtn);
     this.actionsPanel.appendChild(copyBtn);
@@ -282,11 +298,15 @@ class AIConversationNavigator {
     this.actionsPanel.appendChild(bookmarksBtn);
     this.actionsPanel.appendChild(codeFilterBtn);
     this.actionsPanel.appendChild(reaskBtn);
+    this.actionsPanel.appendChild(downloadImagesBtn);
 
     this.container!.appendChild(this.actionsPanel);
 
     // Add bookmark buttons to messages
     this.addBookmarkButtons();
+
+    // Check for images and show download button if needed
+    this.checkForImages();
   }
 
   private createActionButton(text: string, title: string, onClick: () => void): HTMLButtonElement {
@@ -307,6 +327,7 @@ class AIConversationNavigator {
       transition: 'all 0.2s ease',
       textAlign: 'left',
       whiteSpace: 'nowrap',
+      width: '100%',
     });
 
     button.addEventListener('mouseenter', () => {
@@ -755,6 +776,7 @@ class AIConversationNavigator {
     navigationService.refresh();
     this.updateUI();
     this.updatePageTitle();
+    this.checkForImages();
     logger.debug('ContentScript', 'Extension refresh complete');
   }
 
@@ -1230,6 +1252,124 @@ class AIConversationNavigator {
         element.style.borderColor = 'rgba(255, 255, 255, 0.1)';
       });
     });
+  }
+
+  private toggleMenu(): void {
+    this.menuCollapsed = !this.menuCollapsed;
+    const menuToggleBtn = document.getElementById('menu-toggle-btn');
+
+    if (!this.actionsPanel) return;
+
+    // Get all children except the toggle button
+    const children = Array.from(this.actionsPanel.children).filter(
+      (child) => child.id !== 'menu-toggle-btn'
+    );
+
+    if (this.menuCollapsed) {
+      // Hide all buttons except toggle
+      children.forEach((child) => {
+        (child as HTMLElement).style.display = 'none';
+      });
+      if (menuToggleBtn) {
+        menuToggleBtn.textContent = '▶ Menu';
+        menuToggleBtn.title = 'Show menu';
+      }
+    } else {
+      // Show all buttons
+      children.forEach((child) => {
+        (child as HTMLElement).style.display = '';
+      });
+      if (menuToggleBtn) {
+        menuToggleBtn.textContent = '▼ Menu';
+        menuToggleBtn.title = 'Hide menu';
+      }
+      // Re-check images visibility
+      this.checkForImages();
+    }
+  }
+
+  private checkForImages(): void {
+    const messages = messageService.getAssistantMessages();
+    const downloadBtn = document.getElementById('download-images-btn');
+
+    if (!downloadBtn) return;
+
+    // Check if any AI response contains images
+    let hasImages = false;
+    messages.forEach((msg) => {
+      const images = msg.element.querySelectorAll('img');
+      if (images.length > 0) {
+        hasImages = true;
+      }
+    });
+
+    // Show/hide download button based on image presence
+    if (hasImages && !this.menuCollapsed) {
+      downloadBtn.style.display = '';
+    } else if (this.menuCollapsed) {
+      downloadBtn.style.display = 'none';
+    } else {
+      downloadBtn.style.display = 'none';
+    }
+  }
+
+  private async downloadAllImages(): Promise<void> {
+    logger.info('ContentScript', 'Downloading all images from AI responses');
+    const messages = messageService.getAssistantMessages();
+    let imageCount = 0;
+
+    for (const msg of messages) {
+      const images = msg.element.querySelectorAll('img');
+
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i] as HTMLImageElement;
+
+        try {
+          // Fetch the image
+          const response = await fetch(img.src);
+          const blob = await response.blob();
+
+          // Create download link
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+
+          // Extract filename from src or create a default one
+          let filename = `ai-image-${imageCount + 1}`;
+          const srcParts = img.src.split('/');
+          const lastPart = srcParts[srcParts.length - 1];
+          if (lastPart && lastPart.includes('.')) {
+            filename = lastPart.split('?')[0]; // Remove query params
+          } else {
+            // Determine extension from blob type
+            const extension = blob.type.split('/')[1] || 'png';
+            filename += `.${extension}`;
+          }
+
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          imageCount++;
+
+          // Small delay between downloads to avoid overwhelming the browser
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        } catch (err) {
+          logger.error('ContentScript', 'Failed to download image', err);
+          console.error('Failed to download image:', err);
+        }
+      }
+    }
+
+    if (imageCount > 0) {
+      this.showNotification(`✅ Downloaded ${imageCount} image${imageCount > 1 ? 's' : ''}!`);
+      logger.info('ContentScript', `Successfully downloaded ${imageCount} images`);
+    } else {
+      this.showNotification('❌ No images found in AI responses');
+      logger.warn('ContentScript', 'No images found to download');
+    }
   }
 
   private cleanup(): void {
