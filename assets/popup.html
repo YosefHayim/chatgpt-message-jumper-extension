@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Conversation Navigator</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body data-theme="dark">
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="title">AI Conversation Navigator</h1>
+      <p class="subtitle">v2.0.0 - Advanced navigation for AI conversations</p>
+    </header>
+
+    <!-- Settings Section -->
+    <section class="section">
+      <h2 class="section-title">Settings</h2>
+
+      <!-- Enable/Disable -->
+      <div class="setting-item">
+        <span>Enable Extension</span>
+        <label class="toggle">
+          <input type="checkbox" id="enable-toggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Theme -->
+      <div class="setting-item">
+        <span>Theme</span>
+        <select id="theme-select" class="select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="auto">Auto</option>
+        </select>
+      </div>
+
+      <!-- Show Stats -->
+      <div class="setting-item">
+        <span>Show Statistics</span>
+        <input type="checkbox" id="show-stats" checked class="checkbox">
+      </div>
+
+      <!-- Token Warning -->
+      <div class="setting-item">
+        <span>Context Warning</span>
+        <input type="checkbox" id="show-token-warning" checked class="checkbox">
+      </div>
+
+      <!-- Warning Threshold -->
+      <div id="threshold-container" class="setting-item-full">
+        <div class="threshold-header">
+          <span>Warning Threshold</span>
+          <span id="threshold-value" class="threshold-value">80%</span>
+        </div>
+        <input type="range" id="threshold-slider" min="50" max="95" step="5" value="80" class="slider">
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section">
+      <h2 class="section-title">Features</h2>
+      <ul class="feature-list">
+        <li>Navigate between AI responses</li>
+        <li>View conversation statistics</li>
+        <li>Token/character counting</li>
+        <li>Enhanced search within messages</li>
+        <li>Multi-platform support</li>
+      </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Works on ChatGPT, Claude & Gemini</p>
+      <p>Made with ❤️ by YosefHayim</p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

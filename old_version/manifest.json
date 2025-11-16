@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "ChatGPT Message Jumper",
+  "version": "1.4",
+  "description": "Jump to previous ChatGPT responses on chat.openai.com.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["https://chatgpt.com/*"],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["content.js"],
+      "css": ["style.css", "loader.css"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
