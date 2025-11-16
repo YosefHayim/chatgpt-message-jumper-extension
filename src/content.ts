@@ -15,12 +15,15 @@ class AIConversationNavigator {
   private container: HTMLDivElement | null = null;
   private statsPanel: HTMLDivElement | null = null;
   private navButton: HTMLButtonElement | null = null;
+  private actionsPanel: HTMLDivElement | null = null;
   private searchPanel: HTMLDivElement | null = null;
   private searchInput: HTMLInputElement | null = null;
   private isLoading: boolean = false;
   private enabled: boolean = true;
   private observer: MutationObserver | null = null;
   private refreshTimeout: number | null = null;
+  private originalTitle: string = document.title;
+  private messagesCollapsed: boolean = false;
 
   constructor() {
     this.initialize();
@@ -110,6 +113,9 @@ class AIConversationNavigator {
     // Create stats panel
     this.createStatsPanel();
 
+    // Create action buttons
+    this.createActionsPanel();
+
     // Create navigation button
     this.createNavButton();
 
@@ -118,6 +124,7 @@ class AIConversationNavigator {
 
     // Initial UI update
     this.updateUI();
+    this.updatePageTitle();
   }
 
   private createStatsPanel(): void {
@@ -179,6 +186,230 @@ class AIConversationNavigator {
     this.navButton.addEventListener('mouseleave', () => this.onButtonHover(false));
 
     this.container!.appendChild(this.navButton);
+  }
+
+  private createActionsPanel(): void {
+    this.actionsPanel = document.createElement('div');
+    Object.assign(this.actionsPanel.style, {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      marginBottom: '12px',
+      pointerEvents: 'auto',
+    });
+
+    // Jump to First button
+    const firstBtn = this.createActionButton('⬆️ First', 'Jump to first AI response', () => {
+      navigationService.jumpToMessage(0);
+      this.updateUI();
+    });
+
+    // Jump to Last button
+    const lastBtn = this.createActionButton('⬇️ Last', 'Jump to last AI response', () => {
+      const total = navigationService.getState().totalMessages;
+      navigationService.jumpToMessage(total - 1);
+      this.updateUI();
+    });
+
+    // Copy All Responses button
+    const copyBtn = this.createActionButton('📋 Copy All', 'Copy all AI responses to clipboard', () => {
+      this.copyAllResponses();
+    });
+
+    // Export to Markdown button
+    const exportBtn = this.createActionButton('💾 Export', 'Export conversation to Markdown', () => {
+      this.exportToMarkdown();
+    });
+
+    // Collapse/Expand toggle
+    const collapseBtn = this.createActionButton('📏 Collapse', 'Toggle long message collapse', () => {
+      this.toggleMessageCollapse();
+      collapseBtn.textContent = this.messagesCollapsed ? '📏 Expand' : '📏 Collapse';
+      collapseBtn.title = this.messagesCollapsed ? 'Expand long messages' : 'Collapse long messages';
+    });
+
+    this.actionsPanel.appendChild(firstBtn);
+    this.actionsPanel.appendChild(lastBtn);
+    this.actionsPanel.appendChild(copyBtn);
+    this.actionsPanel.appendChild(exportBtn);
+    this.actionsPanel.appendChild(collapseBtn);
+
+    this.container!.appendChild(this.actionsPanel);
+  }
+
+  private createActionButton(text: string, title: string, onClick: () => void): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.textContent = text;
+    button.title = title;
+
+    Object.assign(button.style, {
+      background: 'rgba(0, 0, 0, 0.8)',
+      backdropFilter: 'blur(10px)',
+      color: 'white',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '8px',
+      padding: '10px 14px',
+      fontSize: '13px',
+      fontWeight: '500',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+      textAlign: 'left',
+      whiteSpace: 'nowrap',
+    });
+
+    button.addEventListener('mouseenter', () => {
+      button.style.background = 'rgba(16, 163, 127, 0.2)';
+      button.style.borderColor = '#10a37f';
+    });
+
+    button.addEventListener('mouseleave', () => {
+      button.style.background = 'rgba(0, 0, 0, 0.8)';
+      button.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+    });
+
+    button.addEventListener('click', onClick);
+
+    return button;
+  }
+
+  private copyAllResponses(): void {
+    const messages = messageService.getAssistantMessages();
+    const content = messages.map((msg, index) => {
+      return `--- AI Response ${index + 1} ---\n\n${msg.content}\n`;
+    }).join('\n');
+
+    navigator.clipboard.writeText(content).then(() => {
+      this.showNotification('✅ Copied all AI responses to clipboard!');
+    }).catch((err) => {
+      console.error('Failed to copy:', err);
+      this.showNotification('❌ Failed to copy to clipboard');
+    });
+  }
+
+  private exportToMarkdown(): void {
+    const messages = messageService.getAssistantMessages();
+    const stats = messageService.getConversationStats();
+    const platform = platformDetector.getPlatformName();
+    const date = new Date().toISOString().split('T')[0];
+
+    let markdown = `# ${platform} Conversation Export\n\n`;
+    markdown += `**Date**: ${date}\n`;
+    markdown += `**Messages**: ${stats.assistantMessages}\n`;
+    markdown += `**Characters**: ${stats.totalCharacters}\n`;
+    markdown += `**Estimated Tokens**: ${stats.estimatedTokens}\n\n`;
+    markdown += `---\n\n`;
+
+    messages.forEach((msg, index) => {
+      markdown += `## AI Response ${index + 1}\n\n`;
+      markdown += `${msg.content}\n\n`;
+      markdown += `---\n\n`;
+    });
+
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${platform.toLowerCase()}-conversation-${date}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.showNotification('✅ Conversation exported to Markdown!');
+  }
+
+  private toggleMessageCollapse(): void {
+    this.messagesCollapsed = !this.messagesCollapsed;
+    const messages = messageService.getAssistantMessages();
+    const COLLAPSE_THRESHOLD = 1000; // Characters
+
+    messages.forEach((msg) => {
+      if (msg.characterCount > COLLAPSE_THRESHOLD) {
+        if (this.messagesCollapsed) {
+          // Add collapsed class/style
+          msg.element.style.maxHeight = '200px';
+          msg.element.style.overflow = 'hidden';
+          msg.element.style.position = 'relative';
+
+          // Add "Show more" indicator if not already there
+          if (!msg.element.querySelector('.expand-indicator')) {
+            const indicator = document.createElement('div');
+            indicator.className = 'expand-indicator';
+            indicator.textContent = '... (click to expand)';
+            Object.assign(indicator.style, {
+              position: 'absolute',
+              bottom: '0',
+              left: '0',
+              right: '0',
+              background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+              padding: '20px 10px 10px',
+              textAlign: 'center',
+              color: '#10a37f',
+              fontSize: '12px',
+              cursor: 'pointer',
+            });
+
+            indicator.addEventListener('click', (e) => {
+              e.stopPropagation();
+              msg.element.style.maxHeight = 'none';
+              indicator.remove();
+            });
+
+            msg.element.appendChild(indicator);
+          }
+        } else {
+          // Expand
+          msg.element.style.maxHeight = 'none';
+          msg.element.style.overflow = 'visible';
+          const indicator = msg.element.querySelector('.expand-indicator');
+          if (indicator) {
+            indicator.remove();
+          }
+        }
+      }
+    });
+
+    this.showNotification(this.messagesCollapsed ? '📏 Long messages collapsed' : '📏 Messages expanded');
+  }
+
+  private updatePageTitle(): void {
+    const stats = messageService.getConversationStats();
+    const platform = platformDetector.getPlatformName();
+
+    if (stats.assistantMessages > 0) {
+      document.title = `${platform} (${stats.assistantMessages} messages)`;
+    }
+  }
+
+  private showNotification(message: string): void {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+
+    Object.assign(notification.style, {
+      position: 'fixed',
+      top: '80px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      background: 'rgba(0, 0, 0, 0.9)',
+      color: 'white',
+      padding: '12px 24px',
+      borderRadius: '8px',
+      fontSize: '14px',
+      fontWeight: '500',
+      zIndex: '10001',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+      pointerEvents: 'none',
+    });
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.transition = 'opacity 0.3s ease';
+      notification.style.opacity = '0';
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    }, 2000);
   }
 
   private createSearchPanel(): void {
@@ -445,6 +676,7 @@ class AIConversationNavigator {
   private refreshExtension(): void {
     navigationService.refresh();
     this.updateUI();
+    this.updatePageTitle();
   }
 
   private cleanup(): void {
@@ -467,6 +699,9 @@ class AIConversationNavigator {
       this.observer.disconnect();
       this.observer = null;
     }
+
+    // Restore original page title
+    document.title = this.originalTitle;
 
     searchService.clearSearch();
   }
